@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="EASTL">
+      <UniqueIdentifier>{d8a8e314-c52b-4828-a75f-64817e7dd698}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EASTL\source">
+      <UniqueIdentifier>{5b221ced-e91b-464c-a7f9-77d002b90606}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CorePCH.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="EASTL\allocator_eastl.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\assert.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\fixed_pool.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\hashtable.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\intrusive_list.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\numeric_limits.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\red_black_tree.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\string.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTL\thread_support.cpp">
+      <Filter>EASTL\source</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

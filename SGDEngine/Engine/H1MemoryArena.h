@@ -105,7 +105,7 @@ namespace Memory
 				// 1. alloc bit mask
 				uint64			AllocBitMask;
 				// 2. singly linked list (tracking next page and next free page)
-				std::unique_ptr<MemoryPage> NextPage;
+				eastl::unique_ptr<MemoryPage> NextPage;
 				MemoryPage*	NextFreePage;
 				// 3. unique id
 				//	- memory page cannot over the range of uint32 (it will over TB...)
@@ -129,7 +129,7 @@ namespace Memory
 		};
 
 		// memory pages
-		std::unique_ptr<MemoryPage> PageHead;
+		eastl::unique_ptr<MemoryPage> PageHead;
 		MemoryPage*	FreePageHead;
 	};
 }
