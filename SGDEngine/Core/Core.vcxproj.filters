@@ -21,11 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CorePCH.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="EASTL\allocator_eastl.cpp">
       <Filter>EASTL\source</Filter>
     </ClCompile>
@@ -53,5 +48,16 @@
     <ClCompile Include="EASTL\thread_support.cpp">
       <Filter>EASTL\source</Filter>
     </ClCompile>
+    <ClCompile Include="CorePrivate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EASTLCompileUnity.cpp">
+      <Filter>EASTL</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CorePrivate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

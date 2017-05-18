@@ -8,4 +8,4 @@ typedef long int int64;
 typedef unsigned long int uint64;
 
 // EASTL
-#include "unique_ptr.h"
+#include "CorePrivate.h"

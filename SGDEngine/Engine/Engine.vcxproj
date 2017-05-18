@@ -89,7 +89,7 @@
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>H1EnginePrivate.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\\Core\\EASTL</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\\Core\\EASTL;..\\Core</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
