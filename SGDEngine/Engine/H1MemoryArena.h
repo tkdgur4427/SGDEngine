@@ -47,6 +47,8 @@ namespace Memory
 	class H1MemoryArena
 	{
 	public:
+		H1MemoryArena() {}
+		~H1MemoryArena() {}
 
 	protected:
 		enum { 
@@ -75,14 +77,17 @@ namespace Memory
 		*/
 		struct MemoryPage
 		{
+			MemoryPage() {}
+			~MemoryPage() {}
+
 			enum
 			{
 				// we have 63 memory block counts for actual usage; memory page provide us total 126MB to use
-				MEMORY_BLOCK_COUNT = 63, 
+				MEMORY_BLOCK_COUNT = 63,
 				// last memory block is sued for headers and additional properties, so the block make it empty
-				ALLOC_BIT_MASK_FULL = 0xFFFFFFFFFFFFFFFF >> 1,
+				ALLOC_BIT_MASK_FULL = (uint64)(0xFFFFFFFFFFFFFFFF >> 1),
 			};
-
+			
 			// tagger for memory page 
 			//	- has additional information for this memory page
 			//	- we can use this tag for indicator to distinguish the usages
@@ -124,8 +129,49 @@ namespace Memory
 
 			// methods
 			bool IsFull() const { return Layout.AllocBitMask != ALLOC_BIT_MASK_FULL; }
-			MemoryPage* GetNextPage() { return Layout.NextPage; }
+			MemoryPage* GetNextPage() { return Layout.NextPage.get(); }
 			MemoryPage* GetNextFreePage() { return Layout.NextFreePage; }
+
+			// allocate/deallocate (for internal methods for MemoryPage)
+
+			// explicitly define input and output structure to allocate/deallocate memory for separating dependencies between MemoryArena class
+			// 1. allocate params
+			struct AllocInput
+			{
+				// requested memory block count
+				int32 BlockCount; 
+			};
+
+			struct AllocOutput
+			{				
+				// memory page id (tag id)
+				uint32 TagId;
+				// memory block offset and count
+				int32 Offset;
+				int32 Count;
+			};
+
+			// 2. deallocate params
+			struct DeallocInput
+			{
+				// memory block offset and count
+				int32 Offset;
+				int32 Count;
+			};
+
+			AllocOutput Allocate(const AllocInput& Params);
+			void Deallocate(const DeallocInput& Params);
+
+		protected:
+			// internal helper methods
+
+			// get available memory block index
+			int32 GetAvailableBlockIndex(int32 InBlockCount = 1);
+			// marking alloc bits with Value
+			void MarkAllocBits(bool InValue, int32 InOffset, int32 InCount = 1);
+			// validation checking
+			void ValidateAllocBits(bool InValue, int32 InOffset, int32 InCount = 1);
+
 		};
 
 		// memory pages

@@ -19,16 +19,19 @@
     <Filter Include="Util">
       <UniqueIdentifier>{e14e2691-4295-435a-8cc7-0990944688c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MemoryArena">
+      <UniqueIdentifier>{9dd78bc8-9ac8-4b89-a1e2-59fff938511b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="H1MemoryArena.h">
-      <Filter>Memory</Filter>
-    </ClInclude>
     <ClInclude Include="H1EnginePrivate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="H1PlatformUtil.h">
       <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="H1MemoryArena.h">
+      <Filter>MemoryArena</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -37,6 +40,9 @@
     </ClCompile>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
       <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="H1MemoryArena.cpp">
+      <Filter>MemoryArena</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

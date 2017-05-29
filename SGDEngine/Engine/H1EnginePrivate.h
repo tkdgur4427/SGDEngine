@@ -9,3 +9,6 @@ typedef unsigned long int uint64;
 
 // EASTL
 #include "CorePrivate.h"
+
+// final release flag
+#define FINAL_RELEASE 0
