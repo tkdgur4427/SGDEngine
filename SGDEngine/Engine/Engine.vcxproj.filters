@@ -1,48 +1,56 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Memory">
       <UniqueIdentifier>{23cda96b-c3b0-49ca-9a0f-4064f1b3c36a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Util">
       <UniqueIdentifier>{e14e2691-4295-435a-8cc7-0990944688c1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="MemoryArena">
+    <Filter Include="Assert">
+      <UniqueIdentifier>{27795808-9df2-4be0-bf9e-49d11fdfa509}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memory\MemoryArena">
       <UniqueIdentifier>{9dd78bc8-9ac8-4b89-a1e2-59fff938511b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Thread">
+      <UniqueIdentifier>{54af76e6-f0d0-4e4f-9bdb-54256b0c5a95}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Thread\Platforms">
+      <UniqueIdentifier>{7f2812d5-cb24-4d0f-82b7-5a06de0f2ecd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="H1EnginePrivate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="H1PlatformUtil.h">
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="H1MemoryArena.h">
-      <Filter>MemoryArena</Filter>
+      <Filter>Memory\MemoryArena</Filter>
+    </ClInclude>
+    <ClInclude Include="H1EnginePrivate.h" />
+    <ClInclude Include="H1Assert.h">
+      <Filter>Assert</Filter>
+    </ClInclude>
+    <ClInclude Include="H1WorkerThread.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="H1PlatformThread.h">
+      <Filter>Thread</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="H1EnginePrivate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
       <Filter>Util</Filter>
     </ClCompile>
     <ClCompile Include="H1MemoryArena.cpp">
-      <Filter>MemoryArena</Filter>
+      <Filter>Memory\MemoryArena</Filter>
+    </ClCompile>
+    <ClCompile Include="H1EnginePrivate.cpp" />
+    <ClCompile Include="H1PlatformThreadWin32.cpp">
+      <Filter>Thread\Platforms</Filter>
+    </ClCompile>
+    <ClCompile Include="H1PlatformThread.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

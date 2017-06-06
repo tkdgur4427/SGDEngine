@@ -41,6 +41,150 @@ namespace Memory
 	};
 
 	/*
+	** memory arena log system
+	- memory arena log system is dedicated for memory arena, this is because official log system is not initialized during memory arena system
+	- memory allocation/deallocation from memory arena is globally synchronized, so no need to be worried about async logging system
+	- this class is singleton! it is only assessable from H1Log<type>
+	*/
+
+	template<class CharType>
+	class H1Log
+	{
+	public:
+		static void CreateFormattedLog(const CharType* Format, ...);
+
+	protected:
+		enum { MAX_LEN = 127, };
+
+		H1Log()
+			: Next(nullptr), FreeNext(nullptr)
+		{
+			// empty the data
+			memset(Data, 0, sizeof(Data));
+		}
+
+	public:
+		// log data
+		CharType Data[MAX_LEN + 1];
+	};
+
+	template<class CharType>
+	class H1MemoryArenaLogger
+	{
+	public:
+		H1MemoryArenaLogger()
+		{
+			// initialize logger
+			Initialize();
+		}
+
+		~H1MemoryArenaLogger()
+		{
+
+		}
+
+		// friend class (only accessible from H1Log)
+		friend class H1Log<CharType>;
+
+	protected:		
+		static H1MemoryArenaLogger* GetSingleton()
+		{
+			static H1MemoryArenaLogger MemoryArenaLogger;
+			return &MemoryArenaLogger;
+		}
+
+		// Header layout
+		struct HeaderLayout
+		{
+			// tracking current log index
+			int32 CurrLogIndex;
+		};
+
+		enum
+		{
+			LogSize = sizeof(H1Log<CharType>),
+			// memory arena log page size is 2MB
+			LogPageSize = 2 * 1024 * 1024,
+			// log count per page
+			// (2MB - pointer size (Head and FreeHead)) / LogSize
+			HeaderLayoutSize = sizeof(HeaderLayout),
+			LogCountPerPage = (LogPageSize - HeaderLayoutSize) / LogSize,
+			// log count limit
+			// currently we limit the log count as page size
+			LogCountLimit = LogCountPerPage,
+		};
+
+		// real data layout
+		struct LoggerLayout
+		{
+			// header layout
+			HeaderLayout Header;
+
+			// logs
+			H1Log<CharType> Logs[LogCountPerPage];
+		};
+
+		union
+		{
+			// logger layout
+			LoggerLayout Layout;
+
+			// data size limitation
+			byte Data[LogPageSize];
+		};
+
+		// construct logger
+		void Initialize()
+		{
+			memset(Data, 0, sizeof(Data));
+			Layout.Header.CurrLogIndex = 0; // reset the current log index
+		}
+
+		// create new log
+		//	- give temporary log pointer (this should be used as scoped pointer do not store this as member variables)
+		H1Log<CharType>* CreateLog()
+		{
+			// if it reach to the limit dump the result
+			if (Layout.Header.CurrLogIndex == LogCountLimit)
+			{
+				DumpLogs();				
+			}
+
+			H1Log<CharType>* Result = &Layout.Logs[Layout.Header.CurrLogIndex];
+			Layout.Header.CurrLogIndex++;
+
+			return Result;
+		}
+
+		// dump the log
+		void DumpLogs()
+		{
+			// dump the log
+			for (int32 LogIndex = 0; LogIndex < Layout.Header.CurrLogIndex; ++LogIndex)
+			{
+				H1Log<CharType>& LogElement = Layout.Logs[LogIndex];
+				SGD::Platform::Util::appOutputDebugString(LogElement.Data);
+			}
+
+			// reset the logs
+			Initialize();
+		}
+	};
+
+	// static member functions
+	template<class CharType>
+	void H1Log<CharType>::CreateFormattedLog(const CharType* Format, ...)
+	{
+		H1Log<CharType>* NewLog = H1MemoryArenaLogger<CharType>::GetSingleton()->CreateLog();
+
+		// format the log
+		va_list Args;
+		va_start(Args, Format);
+		vsnprintf(NewLog->Data, H1Log<CharType>::MAX_LEN, Format, Args);
+		va_end(Args);
+	}
+
+	/*
 		Memory Arena
 			- we can think of Memory Arena as the starting point (head quarter) for memory allocation
 	*/
@@ -171,7 +315,6 @@ namespace Memory
 			void MarkAllocBits(bool InValue, int32 InOffset, int32 InCount = 1);
 			// validation checking
 			void ValidateAllocBits(bool InValue, int32 InOffset, int32 InCount = 1);
-
 		};
 
 		// memory pages

@@ -54,7 +54,7 @@ int32 H1MemoryArena::MemoryPage::GetAvailableBlockIndex(int32 InBlockCount)
 	while (BlockCount > 0)
 	{
 		// first find the nonzero bit		
-		if (!BitScanForward64(CurrOffset, AllocMask))
+		if (!appBitScanForward64(CurrOffset, AllocMask))
 		{
 			// just break the loop and return it
 			break;
@@ -72,7 +72,7 @@ int32 H1MemoryArena::MemoryPage::GetAvailableBlockIndex(int32 InBlockCount)
 		while (BlockCount > 0)
 		{
 			// test bit and set it as allocated
-			if (BitTestAndSet64(CurrOffset, AllocMask))
+			if (appBitTestAndSet64(CurrOffset, AllocMask))
 			{
 				CurrOffset++;
 				BlockCount--;

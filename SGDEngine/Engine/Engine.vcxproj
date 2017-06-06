@@ -89,7 +89,7 @@
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>H1EnginePrivate.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\\Core\\EASTL;..\\Core</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\\Core;..\\Core\\EASTL</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -119,15 +119,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="H1Assert.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1MemoryArena.h" />
     <ClInclude Include="H1PlatformUtil.h" />
+    <ClInclude Include="H1PlatformThread.h" />
+    <ClInclude Include="H1WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1EnginePrivate.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="H1MemoryArena.cpp" />
+    <ClCompile Include="H1PlatformThread.cpp" />
+    <ClCompile Include="H1PlatformThreadWin32.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="H1PlatformUtilWin32.cpp" />
   </ItemGroup>
   <ItemGroup>
