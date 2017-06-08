@@ -51,7 +51,9 @@ namespace Memory
 	class H1Log
 	{
 	public:
+		static void CreateLog(const CharType* Message);
 		static void CreateFormattedLog(const CharType* Format, ...);
+		static void ForceToDump();
 
 	protected:
 		enum { MAX_LEN = 127, };
@@ -173,6 +175,15 @@ namespace Memory
 
 	// static member functions
 	template<class CharType>
+	void H1Log<CharType>::CreateLog(const CharType* Message)
+	{
+		H1Log<CharType>* NewLog = H1MemoryArenaLogger<CharType>::GetSingleton()->CreateLog();
+
+		// string copy with safe strcpy
+		strcpy_s(NewLog->Data, H1Log<CharType>::MAX_LEN, Message);
+	}
+
+	template<class CharType>
 	void H1Log<CharType>::CreateFormattedLog(const CharType* Format, ...)
 	{
 		H1Log<CharType>* NewLog = H1MemoryArenaLogger<CharType>::GetSingleton()->CreateLog();
@@ -182,6 +193,13 @@ namespace Memory
 		va_start(Args, Format);
 		vsnprintf(NewLog->Data, H1Log<CharType>::MAX_LEN, Format, Args);
 		va_end(Args);
+	}
+
+	template<class CharType>
+	void H1Log<CharType>::ForceToDump()
+	{
+		// force to dump logs (special usage for checkf)
+		H1MemoryArenaLogger<CharType>::GetSingleton()->DumpLogs();
 	}
 
 	/*

@@ -6,6 +6,30 @@ using namespace SGD::Memory;
 #include "H1PlatformUtil.h"
 using namespace SGD::Platform::Util;
 
+// only for memory use formatted debugf and checkf
+#if !FINAL_RELEASE
+
+// memory debugf
+// debugf with message
+#define h1MemDebug(message) H1Log<char>::CreateLog(message);
+// debugf with formatted message
+#define h1MemDebugf(format, ...) H1Log<char>::CreateFormattedLog(format, __VA_ARGS__);
+// memory checkf
+// checkf with message
+#define h1MemCheck(condition, meessage) if(!condition) { H1Log<char>::CreateLog(meessage); H1Log<char>::ForceToDump(); __debugbreak(); }
+// checkf with formatted message
+#define h1MemCheckf(condition, format, ...) if(!condition) { H1Log<char>::CreateFormattedLog(format, __VA_ARGS__); H1Log<char>::ForceToDump(); __debugbreak(); }
+
+#else
+
+// disable debugf and checkf for final release mode
+#define h1MemDebug(message) __noop
+#define h1MemDebugf(format, ...) __noop
+#define h1MemCheck(condition, meessage) __noop
+#define h1MemCheckf(condition, format, ...) __noop
+
+#endif
+
 H1MemoryArena::MemoryPage::AllocOutput H1MemoryArena::MemoryPage::Allocate(const AllocInput& Params)
 {
 	AllocOutput Output;
@@ -118,17 +142,12 @@ void H1MemoryArena::MemoryPage::ValidateAllocBits(bool InValue, int32 InOffset, 
 		if (InValue) // mark it as allocated
 		{
 			// trigger assert
-			if ((Layout.AllocBitMask & (1 << CurrOffset)) != 0)
-			{
-				//assert(false, "invalid alloc bit please check!");
-			}			
+			h1MemCheck((Layout.AllocBitMask & (1 << CurrOffset)) == 0, "invalid alloc bit please check!");		
 		}
 		else // mark it as free (deallocated)
 		{
-			if ((Layout.AllocBitMask ^ (1 << CurrOffset)) != 1)
-			{
-				//assert(false, "invalid alloc bit please check!");
-			}
+			// trigger assert
+			h1MemCheck((Layout.AllocBitMask ^ (1 << CurrOffset)) == 1, "invalid alloc bit please check!");
 		}
 	}
 }
