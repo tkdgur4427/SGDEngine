@@ -120,6 +120,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="H1Assert.h" />
+    <ClInclude Include="H1AsyncLogger.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1MemoryArena.h" />
     <ClInclude Include="H1PlatformUtil.h" />
