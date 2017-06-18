@@ -17,6 +17,10 @@ namespace Util
 
 		// output debug string
 		void appOutputDebugString(const char* String);
+
+		// memory operation
+		void appMemzero(byte* Address, int64 Size);
+		void appMemcpy(byte* SrcAddress, byte* DestAddress, int64 Size);
 }
 }
 }

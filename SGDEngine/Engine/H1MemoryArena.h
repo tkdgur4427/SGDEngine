@@ -10,7 +10,20 @@ namespace Memory
 	class H1MemoryBlock
 	{
 	public:
+		friend class H1MemoryArena;
+
+		H1MemoryBlock(int32 InPageTagId, int32 InOffset)
+			: BaseAddress(nullptr)
+			, Size(-1)
+			, PageTagId(InPageTagId)
+			, Offset(InOffset)
+		{}
+
+		// base address
 		byte* BaseAddress;
+
+		// this should be same as MemoryArena::MEMORY_BLOCK_SIZE
+		int32 Size;
 
 	protected:
 		// page id to lookup the memory page in MemoryArena
@@ -24,13 +37,27 @@ namespace Memory
 	class H1MemoryBlockRange
 	{
 	public:
+		friend class H1MemoryArena;
+
+		H1MemoryBlockRange(int32 InPageTagId, int32 InOffset, int32 InCount)
+			: PageTagId(InPageTagId)
+			, Offset(InOffset)
+			, Count(InCount)
+			, BaseAddress(nullptr)
+			, Size(-1)
+		{}
+
+		// base address
 		byte* BaseAddress;
+
+		// this should be same as MemoryArena::MEMORY_BLOCK_SIZE * Count;
+		int32 Size;
 
 	protected:
 		int32 PageTagId;
 		// block offset and count (contiguous block count)
-		byte Offset;
-		byte Count;
+		int32 Offset;
+		int32 Count;
 	};
 
 	// if it requires more than 126 MB memory size, externally allocate this large block
@@ -212,6 +239,12 @@ namespace Memory
 		H1MemoryArena() {}
 		~H1MemoryArena() {}
 
+		H1MemoryBlock AllocateMemoryBlock();
+		H1MemoryBlockRange AllocateMemoryBlocks(int32 MemoryBlockCount);
+
+		void DeallocateMemoryBlock(const H1MemoryBlock& InMemoryBlock);
+		void DeallocateMemoryBlocks(const H1MemoryBlockRange& InMemoryBlocks);
+
 	protected:
 		enum { 
 			MEMORY_BLOCK_SIZE = 2 * 1024 * 1024, // memory block size is 2 MB
@@ -291,6 +324,10 @@ namespace Memory
 
 			// methods
 			bool IsFull() const { return Layout.AllocBitMask != ALLOC_BIT_MASK_FULL; }
+
+			void SetNextPage(eastl::unique_ptr<MemoryPage>& NewPage) { Layout.NextPage = eastl::move(NewPage); }
+			void SetNextFreePage(MemoryPage* NewFreePage) { Layout.NextFreePage = NewFreePage; }
+
 			MemoryPage* GetNextPage() { return Layout.NextPage.get(); }
 			MemoryPage* GetNextFreePage() { return Layout.NextFreePage; }
 
@@ -311,11 +348,17 @@ namespace Memory
 				// memory block offset and count
 				int32 Offset;
 				int32 Count;
+
+				// base address
+				byte* BaseAddress;
 			};
 
 			// 2. deallocate params
 			struct DeallocInput
 			{
+				// memory page id (tag id)
+				uint32 TagId;
+
 				// memory block offset and count
 				int32 Offset;
 				int32 Count;
@@ -334,6 +377,14 @@ namespace Memory
 			// validation checking
 			void ValidateAllocBits(bool InValue, int32 InOffset, int32 InCount = 1);
 		};
+
+		// allocating new page
+		MemoryPage* AllocatePage();
+		// deallocating all pages
+		void DeallocateAllPages();
+		// allocate internal
+		MemoryPage::AllocOutput AllocateInternal(const MemoryPage::AllocInput& Input);
+		void DeallocateInternal(const MemoryPage::DeallocInput& Input);
 
 		// memory pages
 		eastl::unique_ptr<MemoryPage> PageHead;

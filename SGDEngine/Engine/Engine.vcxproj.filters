@@ -19,6 +19,9 @@
     <Filter Include="Thread\Platforms">
       <UniqueIdentifier>{7f2812d5-cb24-4d0f-82b7-5a06de0f2ecd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Log">
+      <UniqueIdentifier>{ba9484f7-4ae1-4180-beaa-c63299e329f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H1PlatformUtil.h">
@@ -37,6 +40,16 @@
     <ClInclude Include="H1PlatformThread.h">
       <Filter>Thread</Filter>
     </ClInclude>
+    <ClInclude Include="H1AsyncLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="H1Memory.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="H1GlobalSingleton.h" />
+    <ClInclude Include="H1RingBuffer.h">
+      <Filter>Util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
@@ -52,5 +65,6 @@
     <ClCompile Include="H1PlatformThread.cpp">
       <Filter>Thread</Filter>
     </ClCompile>
+    <ClCompile Include="H1GlobalSingleton.cpp" />
   </ItemGroup>
 </Project>

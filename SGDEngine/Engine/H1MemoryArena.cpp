@@ -30,6 +30,180 @@ using namespace SGD::Platform::Util;
 
 #endif
 
+H1MemoryArena::MemoryPage::AllocOutput H1MemoryArena::AllocateInternal(const MemoryPage::AllocInput& Input)
+{
+	// alloc output
+	MemoryPage::AllocOutput Output;
+
+	// looping current page, and try to allocate page
+	MemoryPage* CurrPage = FreePageHead;
+	while (CurrPage != nullptr)
+	{
+		Output = CurrPage->Allocate(Input);
+		if (Output.Offset != -1)
+		{
+			// successfully allocate block
+			break;
+		}
+
+		// move to next page
+		CurrPage = CurrPage->GetNextPage();
+	}
+
+	// check whether the block is allocated
+	if (Output.Offset == -1)
+	{
+		// allocate new page
+		MemoryPage* NewPage = AllocatePage();
+
+		// allocate new output
+		Output = NewPage->Allocate(Input);
+		h1MemCheck(Output.Offset != -1, "Error! please check this");
+	}
+
+	return Output;
+}
+
+void H1MemoryArena::DeallocateInternal(const MemoryPage::DeallocInput& Input)
+{
+	// looping naive memory pages
+	MemoryPage* CurrPage = PageHead.get();
+	while (CurrPage != nullptr)
+	{
+		// check whether the current page match tag id
+		if (CurrPage->Layout.TagId == Input.TagId)
+		{
+			CurrPage->Deallocate(Input);
+			break;
+		}
+
+		// move to next page
+		CurrPage = CurrPage->GetNextPage();
+	}
+
+	h1MemCheck(CurrPage != nullptr, "failed to find memory page, please check!");
+
+	// looping free memory page and if curr page is not available, insert it
+	MemoryPage* CurrFreePage = FreePageHead;
+	while (CurrFreePage != nullptr)
+	{
+		if (CurrFreePage->Layout.TagId == CurrPage->Layout.TagId)
+		{
+			// it is already exists in free page
+			break;
+		}
+
+		// move to next free page
+		CurrFreePage = CurrFreePage->GetNextFreePage();
+	}
+
+	// add curr free page list (link it properly)
+	if (CurrFreePage == nullptr)
+	{
+		CurrPage->SetNextFreePage(FreePageHead);
+		FreePageHead = CurrPage;
+	}
+}
+
+H1MemoryBlock H1MemoryArena::AllocateMemoryBlock()
+{
+	// create the alloc input
+	MemoryPage::AllocInput Input;
+	Input.BlockCount = 1;
+
+	// alloc output
+	MemoryPage::AllocOutput Output = AllocateInternal(Input);
+
+	// successfully create memory block
+	H1MemoryBlock NewBlock(Output.TagId, Output.Offset);
+	NewBlock.BaseAddress = Output.BaseAddress;
+	NewBlock.Size = H1MemoryArena::MEMORY_BLOCK_SIZE;
+
+	return NewBlock;
+}
+
+H1MemoryBlockRange H1MemoryArena::AllocateMemoryBlocks(int32 MemoryBlockCount)
+{
+	// create the alloc input
+	MemoryPage::AllocInput Input;
+	Input.BlockCount = MemoryBlockCount;
+
+	// alloc output
+	MemoryPage::AllocOutput Output = AllocateInternal(Input);
+
+	// successfully create memory block
+	H1MemoryBlockRange NewBlockRange(Output.TagId, Output.Offset, Output.Count);
+	NewBlockRange.BaseAddress = Output.BaseAddress;
+	NewBlockRange.Size = H1MemoryArena::MEMORY_BLOCK_SIZE * Output.Count;
+
+	return NewBlockRange;
+}
+
+void H1MemoryArena::DeallocateMemoryBlock(const H1MemoryBlock& InMemoryBlock)
+{
+	// create the dealloc input
+	MemoryPage::DeallocInput Input;
+	Input.TagId = InMemoryBlock.PageTagId;
+	Input.Offset = InMemoryBlock.Offset;
+	Input.Count = 1;
+
+	// deallocate it
+	DeallocateInternal(Input);
+}
+
+void H1MemoryArena::DeallocateMemoryBlocks(const H1MemoryBlockRange& InMemoryBlocks)
+{
+	// create the dealloc input
+	MemoryPage::DeallocInput Input;
+	Input.TagId = InMemoryBlocks.PageTagId;
+	Input.Offset = InMemoryBlocks.Offset;
+	Input.Count = InMemoryBlocks.Count;
+
+	// deallocate it
+	DeallocateInternal(Input);
+}
+
+H1MemoryArena::MemoryPage* H1MemoryArena::AllocatePage()
+{
+	// create new page
+	eastl::unique_ptr<MemoryPage> NewPage = eastl::make_unique<MemoryPage>();
+	// reset the page
+	SGD::Platform::Util::appMemzero((byte*)NewPage.get(), sizeof(MemoryPage));
+
+	// properly link new page
+	NewPage->SetNextPage(PageHead);
+	PageHead = eastl::move(NewPage);
+
+	// properly link new free page
+	NewPage->SetNextFreePage(FreePageHead);
+	FreePageHead = eastl::move(NewPage.get());
+
+	return NewPage.get();
+}
+
+void H1MemoryArena::DeallocateAllPages()
+{
+	// looping all free page node
+	while (FreePageHead != nullptr)
+	{
+		// move to next free page (implicitly invalidate free page pointer)
+		FreePageHead = FreePageHead->Layout.NextFreePage;
+	}
+
+	// looping all pages
+	while (PageHead.get() == nullptr)
+	{
+		// get the unique
+		eastl::unique_ptr<MemoryPage> TempPageHead = eastl::move(PageHead);
+
+		// move next page
+		PageHead = eastl::move(TempPageHead.get()->Layout.NextPage);
+
+		// release the previous page head
+		TempPageHead.reset();
+	}
+}
+
 H1MemoryArena::MemoryPage::AllocOutput H1MemoryArena::MemoryPage::Allocate(const AllocInput& Params)
 {
 	AllocOutput Output;
@@ -48,6 +222,9 @@ H1MemoryArena::MemoryPage::AllocOutput H1MemoryArena::MemoryPage::Allocate(const
 		Output.Offset = Offset;
 		Output.Count = Params.BlockCount;
 	}
+
+	// set base address
+	Output.BaseAddress = (byte*)&Layout.MemoryBlocks[Output.Offset];
 
 	return Output;
 }
