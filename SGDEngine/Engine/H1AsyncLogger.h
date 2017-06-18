@@ -22,6 +22,8 @@ namespace Log
 
 		// real string data (start pointer)
 		CharType Data[0];
+
+		// real string data will be inserted (NodeSize - sizeof(H1LogNode) = StrLen)
 	};
 
 	// dedicated log ring buffer
