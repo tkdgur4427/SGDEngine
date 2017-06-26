@@ -16,9 +16,9 @@ using namespace SGD::Platform::Util;
 #define h1MemDebugf(format, ...) H1Log<char>::CreateFormattedLog(format, __VA_ARGS__);
 // memory checkf
 // checkf with message
-#define h1MemCheck(condition, meessage) if(!condition) { H1Log<char>::CreateLog(meessage); H1Log<char>::ForceToDump(); __debugbreak(); }
+#define h1MemCheck(condition, meessage) if(!(condition)) { H1Log<char>::CreateLog(meessage); H1Log<char>::ForceToDump(); __debugbreak(); }
 // checkf with formatted message
-#define h1MemCheckf(condition, format, ...) if(!condition) { H1Log<char>::CreateFormattedLog(format, __VA_ARGS__); H1Log<char>::ForceToDump(); __debugbreak(); }
+#define h1MemCheckf(condition, format, ...) if(!(condition)) { H1Log<char>::CreateFormattedLog(format, __VA_ARGS__); H1Log<char>::ForceToDump(); __debugbreak(); }
 
 #else
 

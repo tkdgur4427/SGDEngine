@@ -244,12 +244,12 @@ namespace Memory
 
 		void DeallocateMemoryBlock(const H1MemoryBlock& InMemoryBlock);
 		void DeallocateMemoryBlocks(const H1MemoryBlockRange& InMemoryBlocks);
-
-	protected:
+	
 		enum { 
 			MEMORY_BLOCK_SIZE = 2 * 1024 * 1024, // memory block size is 2 MB
 		};
 
+	protected:
 		// the memory header that includes all information for memory allocation
 		struct MemoryHeader
 		{

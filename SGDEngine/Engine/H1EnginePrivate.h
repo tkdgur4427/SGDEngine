@@ -14,8 +14,14 @@ typedef unsigned long int uint64;
 #include <windows.h>
 #endif
 
+// final release flag
+#define FINAL_RELEASE 0
+
 // EASTL
 #include "CorePrivate.h"
+
+// static assert (compile-time)
+#include "H1CompileTimeAssert.h"
 
 // platform utilities
 #include "H1PlatformUtil.h"
@@ -25,9 +31,3 @@ typedef unsigned long int uint64;
 
 // thread
 #include "H1PlatformThread.h"
-
-// assertion
-#include "H1Assert.h"
-
-// final release flag
-#define FINAL_RELEASE 0

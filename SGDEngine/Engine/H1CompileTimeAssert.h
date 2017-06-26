@@ -17,5 +17,3 @@
 #define SGD_CT_ASSERT_MSG(expression, message) __noop
 #endif
 #endif
-
-// typical assertion leaving the message (thread-safe; asynchronous logging supported)
