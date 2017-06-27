@@ -16,7 +16,42 @@ namespace Memory
 	public:
 		H1MemStack()
 			: Head(nullptr)
+			, MarkHead(nullptr)
 		{}
+
+		// push the memory size
+		byte* Push(int64 Size)
+		{
+			// check if the current memory tag has available size
+			byte* BaseAddress = Head->MemoryBlock.BaseAddress;
+			byte* CurrAddress = CurrAddress;
+
+			int64 AllocatedSize = CurrAddress - BaseAddress;
+			int64 AvailableSize = MemoryTag::DATA_SIZE - AllocatedSize;
+
+			if (Size > AvailableSize)
+			{
+				// mark end address
+				Head->EndAddress = CurrAddress;
+
+				// allocate new memory tag
+				Head = MemoryTagFactory::CreateMemoryTag(Head);
+
+				// update the properties
+				CurrAddress = Head->MemoryBlock.BaseAddress;
+			}
+
+			// move the memory address
+			byte* AllocatedAddress = CurrAddress;
+			CurrAddress += Size;
+
+			return AllocatedAddress;
+		}	
+
+		void Tick()
+		{
+			//MarkHead == nullptr
+		}
 
 	protected:
 		// friend class declaration
@@ -32,10 +67,14 @@ namespace Memory
 			H1MemoryBlock MemoryBlock;
 
 			// memory tag indicator
-			 MemoryTag* MemoryTag;
+			MemoryTag* MemoryTag;
 
 			// next memory tag 
 			MemoryTagHeader* Next;
+
+			// lastly allocate pointer
+			//	- this address is NOT same as MemoryBlock.BaseAddress + MemoryTag::DATA_SIZE
+			byte* EndAddress;
 		};
 
 		// memory tag in memory stack
@@ -45,6 +84,7 @@ namespace Memory
 			enum
 			{
 				HEADER_SIZE = sizeof(MemoryTagHeader),
+				DATA_SIZE = H1MemoryArena::MEMORY_BLOCK_SIZE - HEADER_SIZE,
 			};
 
 			// memory tag layout aligned to Data in union
@@ -54,7 +94,7 @@ namespace Memory
 				MemoryTagHeader Header;
 
 				// real data which we can use except for HEADER_SIZE
-				byte Data[H1MemoryArena::MEMORY_BLOCK_SIZE - HEADER_SIZE];
+				byte Data[DATA_SIZE];
 			};			
 			
 			union
@@ -108,7 +148,34 @@ namespace Memory
 
 				return &(Tag->Layout.Header);
 			}
+
+			static void DestroyMemoryTag(MemoryTagHeader* Header)
+			{
+				// destroy memory block
+				H1MemoryBlock MemoryBlock = Header->MemoryBlock;
+				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlock(MemoryBlock);
+			}
 		};
+
+		// free memory tags
+		//	- reaching to NewHead
+		void FreeMemoryTags(MemoryTagHeader* NewHead)
+		{
+			// looping memory tags
+			while (Head != NewHead)
+			{
+				MemoryTagHeader* CurrHead = Head;
+
+				// update head
+				Head = CurrHead->Next;
+
+				// restore the curr address
+				CurrAddress = Head->EndAddress;
+
+				// destroy current memory tag
+				MemoryTagFactory::DestroyMemoryTag(CurrHead);				
+			}
+		}
 
 		// member variables
 		// 1. memory tag header (Head)
@@ -116,6 +183,8 @@ namespace Memory
 		// 2. current memory tag address 
 		//	- it is based on Head (MemoryTagHeader*)
 		byte* CurrAddress;
+		// 3. memory marks
+		H1MemMark* MarkHead;
 	};
 
 	// motivated from UE3
@@ -126,22 +195,42 @@ namespace Memory
 			: OwnerStack(Owner)				
 		{
 			// get current memory tag and address
-			MarkedMemoryTag = Owner.Head;
-			MarkedAddress = Owner.CurrAddress;
+			MarkedMemoryTag = OwnerStack.Head;
+			MarkedAddress = OwnerStack.CurrAddress;
+
+			// link the memory mark
+			Next = OwnerStack.MarkHead;
+			OwnerStack.MarkHead = this;
 		}
 
 		~H1MemMark()
 		{
+			// pop the mark
+			Pop();
 
-		}
+			// unlink the memory mark
+			OwnerStack.MarkHead = Next;
+		}			
 
 	protected:
+		// pop the memory stack reaching to the memmark
+		void Pop()
+		{
+			// free memory tags
+			OwnerStack.FreeMemoryTags(MarkedMemoryTag);
+
+			// update curr address
+			OwnerStack.CurrAddress = MarkedAddress;
+		}
+
 		H1MemStack& OwnerStack;
 
 		// marked memory tag
 		H1MemStack::MemoryTagHeader* MarkedMemoryTag;
 		// marked base address from memory tag
 		byte* MarkedAddress;		
+		// linked list memory mark
+		H1MemMark* Next;
 	};
 }
 }

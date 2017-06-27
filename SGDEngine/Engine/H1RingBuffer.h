@@ -57,7 +57,7 @@ namespace Util
 		// produce
 		//	- try to add data to the buffer
 		//	- after the call, 'Size' contains the amount of bytes actually buffered
-		void Produce(const byte* InData, int32& Size)
+		byte* Produce(const byte* InData, int32& Size)
 		{
 			// clamp max to produce and reflect the Size
 			if (Size > MaxToProduce)
@@ -65,18 +65,26 @@ namespace Util
 				Size = MaxToProduce;
 			}
 
-			SGD::Platform::Util::appMemcpy(InData, ProducerPosition, Size);
+			byte* Result = ProducerPosition;
+
+			if (InData != nullptr)
+			{
+				SGD::Platform::Util::appMemcpy(InData, ProducerPosition, Size);
+			}				
 
 			ProducerPosition += Size;
 			DataSizeInBuffer += Size;
 
 			UpdateState();
+
+			return Result;
 		}
 
 		// consume
 		//	- request 'Size' bytes from the buffer
 		//	- after the call, 'Size' contains the amount of bytes actually copied
-		void Consume(byte* OutData, int32& Size)
+		void 
+		(byte* OutData, int32& Size)
 		{
 			// clamp max to consume and reflect the size
 			if (Size > MaxToConsume)

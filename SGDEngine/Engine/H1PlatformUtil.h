@@ -21,6 +21,10 @@ namespace Util
 		// memory operation
 		void appMemzero(byte* Address, int64 Size);
 		void appMemcpy(byte* SrcAddress, byte* DestAddress, int64 Size);
+
+		// string
+		uint32 appStrLen(const char* Str);
+		void appStrcpy(const char* Src, char* Dest);
 }
 }
 }

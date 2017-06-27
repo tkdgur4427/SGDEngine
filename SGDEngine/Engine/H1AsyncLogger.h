@@ -3,6 +3,7 @@
 #include "H1GlobalSingleton.h"
 #include "H1Memory.h"
 #include "H1RingBuffer.h"
+#include "H1PlatformUtil.h"
 
 namespace SGD
 {
@@ -30,30 +31,76 @@ namespace Log
 	template <typename CharType>
 	struct H1LogRingBuffer
 	{
-		H1LogRingBuffer()
-			, Head(nullptr)
+		enum
 		{
-			// request memory block from H1MemoryArena
-			MemoryBlock = H1GlobalSingleton::MemoryArena()->AllocateMemoryBlock();
+			NODE_SIZE = sizeof(H1LogNode<CharType>),
+		};
 
+		H1LogRingBuffer(byte* BaseAddress, int32 Size)
+			, Head(nullptr)
+		{	
 			// initialize ring buffer layout
-			Layout.Initialize(MemoryBlock.BaseAddress, MemoryBlock.Size);
+			Layout.Initialize(BaseAddress, Size);
 		}
 
 		~H1LogRingBuffer()
 		{
-			if (MemoryBlock.BaseAddress == nullptr)
-			{
-				// destroy the ring buffer layout first
-				Layout.Destroy();
-
-				// deallocate memory blocks
-				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlock(MemoryBlock);
-			}
+			
 		}
 
-		// memory block from MemoryArena
-		H1MemoryBlock MemoryBlock;
+		bool AddLog(const CharType* Message)
+		{
+			// get the string len
+			int32 Len = SGD::Platform::Util::appStrLen(Message);			
+
+			// get node size
+			int32 AdditionalSize = Layout.ProduceMaxSize() < NODE_SIZE ? Layout.ProduceMaxSize() : 0;
+			int32 NodeSize = NODE_SIZE + AdditionalSize;
+
+			int32 AllocatedSize = NodeSize + Len * sizeof(CharType);
+
+			if (Layout.TotalBufferedSize() < AllocatedSize)
+			{
+				return false;
+			}				
+
+			// allocate to ring buffer
+			{
+				// first, if there is any additional size to skip, skip it
+				if (AdditionalSize)
+				{
+					Layout.Skip(AdditionalSize);
+				}
+
+				// allocate node first (this should be linear memory)
+				H1LogNode<CharType>* NewNode = (H1LogNode<CharType>*)Layout.Produce(nullptr, NODE_SIZE);
+
+				// produce string
+				int32 MessageSize = Len * sizeof(CharType);
+				int32 CurrSize = MessageSize;
+
+				CharType* StartAddress = Layout.Produce(Message, CurrSize);
+
+				// if we need to do more allocation, do one more
+				if (CurrSize != MessageSize)
+				{
+					Layout.Produce((byte*)Message + CurrSize, (MessageSize - CurrSize));
+				}
+
+				// update node properties
+				NewNode->Data = StartAddress;
+				NewNode->NodeSize = NodeSize;
+				NewNode->StrLen = Len;
+				NewNode->Next = Head;
+
+				// update head pointer
+				Head = NewNode;
+			}			
+
+			return true;
+		}
+
+
 
 		// node head
 		H1LogNode<CharType>* Head;
