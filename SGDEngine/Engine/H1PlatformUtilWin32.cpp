@@ -83,7 +83,7 @@ uint32 appStrLen(const char* Str)
 
 void appStrcpy(const char* Src, char* Dest)
 {
-	strcpy(Dest, Src);
+	//strcpy(Dest, Src);
 }
 
 }

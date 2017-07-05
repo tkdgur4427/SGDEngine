@@ -18,6 +18,9 @@ namespace Log
 		// mark node size
 		int32 NodeSize;
 
+		// tracking skip size (to restore original state)
+		int32 SkipSize;
+
 		// string length
 		int32 StrLen;
 
@@ -26,6 +29,8 @@ namespace Log
 
 		// real string data will be inserted (NodeSize - sizeof(H1LogNode) = StrLen)
 	};
+
+	struct temp { float x; float y; };
 
 	// dedicated log ring buffer
 	template <typename CharType>
@@ -61,6 +66,7 @@ namespace Log
 
 			if (Layout.TotalBufferedSize() < AllocatedSize)
 			{
+				// not enough memory return false
 				return false;
 			}				
 
@@ -100,7 +106,25 @@ namespace Log
 			return true;
 		}
 
+		bool RemoveLog(CharType* Message, int32 MessageSize)
+		{
+			// first get the head
+			H1LogNode<CharType>* RemoveNode = Head;
 
+			if (Message == nullptr || MessageSize < RemoveNode->StrLen)
+			{
+				// not enough message is allocated, so failed to retrieve message
+				return false;
+			}
+			
+			// copy the message
+			SGD::Platform::Util::appMemcpy(Message, RemoveNode->Data, RemoveNode->StrLen);
+
+			// consume the ring buffer and update the head node ptr
+			
+
+			return true;
+		}
 
 		// node head
 		H1LogNode<CharType>* Head;
