@@ -30,8 +30,6 @@ namespace Log
 		// real string data will be inserted (NodeSize - sizeof(H1LogNode) = StrLen)
 	};
 
-	struct temp { float x; float y; };
-
 	// dedicated log ring buffer
 	template <typename CharType>
 	struct H1LogRingBuffer
@@ -96,6 +94,7 @@ namespace Log
 				// update node properties
 				NewNode->Data = StartAddress;
 				NewNode->NodeSize = NodeSize;
+				NewNode->SkipSize = AdditionalSize;
 				NewNode->StrLen = Len;
 				NewNode->Next = Head;
 
@@ -121,7 +120,23 @@ namespace Log
 			SGD::Platform::Util::appMemcpy(Message, RemoveNode->Data, RemoveNode->StrLen);
 
 			// consume the ring buffer and update the head node ptr
-			
+			int32 CurrConsumedSize = RemoveNode->StrLen;
+			Layout.Consume(nullptr, CurrConsumedSize);
+
+			// if the consuming is clamped, one more consume
+			if (CurrConsumedSize != RemoveNode->StrLen)
+			{
+				Layout.Consume(nullptr, RemoveNode->StrLen - CurrConsumedSize);
+			}
+
+			// consume node itself (node is guaranteed linear)
+			Layout.Consume(nullptr, RemoveNode->NodeSize);
+
+			// consume skip size, if there is
+			if (RemoveNode->SkipSize > 0)
+			{
+				Layout.Consume(nullptr, SkipSize);
+			}
 
 			return true;
 		}

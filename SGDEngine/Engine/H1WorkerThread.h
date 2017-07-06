@@ -22,6 +22,8 @@ namespace Thread
 		H1ThreadHandleType ThreadHandle;
 		// thread id
 		H1ThreadIdType ThreadId;
+
+		// extra thread-specific data (like TLS)
 	};
 
 	// worker thread tuple
@@ -33,7 +35,9 @@ namespace Thread
 			: Implementation(nullptr), Context(nullptr)
 		{}
 
+		// logic
 		H1WorkerThread_Impl* Implementation;
+		// state
 		H1WorkerThread_Context* Context;
 	};
 

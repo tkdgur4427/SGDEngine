@@ -83,8 +83,7 @@ namespace Util
 		// consume
 		//	- request 'Size' bytes from the buffer
 		//	- after the call, 'Size' contains the amount of bytes actually copied
-		void 
-		(byte* OutData, int32& Size)
+		void Consume(byte* OutData, int32& Size)
 		{
 			// clamp max to consume and reflect the size
 			if (Size > MaxToConsume)
@@ -92,10 +91,15 @@ namespace Util
 				Size = MaxToConsume;
 			}
 
-			SGD::Platform::Util::appMemcpy(ConsumerPosition, OutData, Size);
+			if (OutData != nullptr)
+			{
+				SGD::Platform::Util::appMemcpy(ConsumerPosition, OutData, Size);
+			}			
 
 			ConsumerPosition += Size;
 			DataSizeInBuffer -= Size;
+
+			UpdateState();
 		}
 
 		// skip
