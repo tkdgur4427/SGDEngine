@@ -121,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="H1CompileTimeAssert.h" />
     <ClInclude Include="H1AsyncLogger.h" />
+    <ClInclude Include="H1CriticalSection.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
     <ClInclude Include="H1Memory.h" />
@@ -143,6 +144,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="H1PlatformUtilWin32.cpp" />
+    <ClCompile Include="H1WorkerThread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Core\Core.vcxproj">

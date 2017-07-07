@@ -1,16 +1,34 @@
 #pragma once
 
+#include "H1MemStack.h"
+
 namespace SGD
 {
 namespace Thread
 {
+	// forward declaration
+	class H1WorkerThread_Context;
+
 	// worker thread logic implementation
 	//	- it includes logic for running thread
 	//	- it should not have state (any member variables)
 	class H1WorkerThread_Impl
 	{
-	public:
+	public:		
 		virtual uint32 Run(void* Data) = 0;
+
+	protected:
+		virtual bool Initialize(H1WorkerThread_Context* Context) = 0;
+	};
+
+	// for user thread type (fiber-based worker thread)
+	class H1WorkerUserThread_Imp
+	{		
+	public:
+		virtual uint32 Run(void* Data);
+
+	protected:
+		virtual bool Initialize(H1WorkerThread_Context* Context);
 	};
 
 	// worker thread context definition
@@ -18,13 +36,25 @@ namespace Thread
 	class H1WorkerThread_Context
 	{
 	public:
+		enum
+		{
+			// setting initial memory stack as 1 MB (it could growable)
+			INITIAL_MEMSTACK_SIZE = 1 * 1024 * 1024,
+		};
+
 		// thread handle
 		H1ThreadHandleType ThreadHandle;
 		// thread id
 		H1ThreadIdType ThreadId;
 
 		// extra thread-specific data (like TLS)
-	};
+
+		// memory stack 
+		SGD::Memory::H1MemStack MemStack;
+
+		// allocator (thread-local)
+
+	};	
 
 	// worker thread tuple
 	//	- worker thread tuple is not for having member variables, it is only allowed to temporary usage (like scoped life time)
@@ -45,7 +75,11 @@ namespace Thread
 	class H1WorkerThreadAdmin
 	{
 	public:
-
+		
 	};
 }
 }
+
+// create worker thread context pointer
+//	- if GWorkerThreadContext == nullptr, it indicates main thread or rendering thread
+extern thread_local SGD::Thread::H1WorkerThread_Context* GWorkerThreadContext;

@@ -48,5 +48,12 @@ namespace Thread
 
 	// set thread affinity
 	void appSetThreadAffinity(H1ThreadHandleType ThreadHandle, uint32 CPUCoreId);
+
+	// sleep
+	void appSleep(int32 MilliSeconds = 0);
+
+	// interlocked methods
+	int32 appInterlockedCompareExchange32(volatile int32* Dest, int32 Exchange, int32 Comperand);
+	int64 appInterlockedCompareExchange64(volatile int64* Dest, int64 Exchange, int64 Comperand);
 }
 }

@@ -48,3 +48,18 @@ void appSetThreadAffinity(H1ThreadHandleType ThreadHandle, uint32 CPUCoreId)
 	DWORD_PTR Mask = 1ull << CPUCoreId;
 	SetThreadAffinityMask(ThreadHandle, Mask);
 }
+
+void appSleep(int32 MilliSeconds)
+{
+	Sleep(MilliSeconds);
+}
+
+int32 appInterlockedCompareExchange32(volatile int32* Dest, int32 Exchange, int32 Comperand)
+{
+	return InterlockedCompareExchange((volatile LONG*)Dest, (LONG)Exchange, (LONG)Comperand);
+}
+
+int64 appInterlockedCompareExchange64(volatile int64* Dest, int64 Exchange, int64 Comperand)
+{
+	return InterlockedCompareExchange64(Dest, Exchange, Comperand);
+}

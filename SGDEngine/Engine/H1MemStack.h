@@ -20,14 +20,14 @@ namespace Memory
 		{}
 
 		// push the memory size
-		byte* Push(int64 Size)
+		byte* Push(uint64 Size)
 		{
 			// check if the current memory tag has available size
 			byte* BaseAddress = Head->MemoryBlock.BaseAddress;
 			byte* CurrAddress = CurrAddress;
 
-			int64 AllocatedSize = CurrAddress - BaseAddress;
-			int64 AvailableSize = MemoryTag::DATA_SIZE - AllocatedSize;
+			uint64 AllocatedSize = CurrAddress - BaseAddress;
+			uint64 AvailableSize = MemoryTag::DATA_SIZE - AllocatedSize;
 
 			if (Size > AvailableSize)
 			{

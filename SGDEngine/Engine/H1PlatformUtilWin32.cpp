@@ -78,7 +78,7 @@ void appMemcpy(byte* SrcAddress, byte* DestAddress, int64 Size)
 
 uint32 appStrLen(const char* Str)
 {
-	return strlen(Str);
+	return (uint32)strlen(Str);
 }
 
 void appStrcpy(const char* Src, char* Dest)

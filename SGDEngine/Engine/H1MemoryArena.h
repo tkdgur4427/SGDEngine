@@ -1,4 +1,8 @@
 #pragma once
+
+// synchronization
+#include "H1CriticalSection.h"
+
 namespace SGD
 {
 namespace Memory
@@ -278,10 +282,11 @@ namespace Memory
 			enum
 			{
 				// we have 63 memory block counts for actual usage; memory page provide us total 126MB to use
-				MEMORY_BLOCK_COUNT = 63,
-				// last memory block is sued for headers and additional properties, so the block make it empty
-				ALLOC_BIT_MASK_FULL = (uint64)(0xFFFFFFFFFFFFFFFF >> 1),
+				MEMORY_BLOCK_COUNT = 63,				
 			};
+
+			// last memory block is sued for headers and additional properties, so the block make it empty
+			const uint64 ALLOC_BIT_MASK_FULL = (uint64)(0xFFFFFFFFFFFFFFFF >> 1);
 			
 			// tagger for memory page 
 			//	- has additional information for this memory page
@@ -389,6 +394,9 @@ namespace Memory
 		// memory pages
 		eastl::unique_ptr<MemoryPage> PageHead;
 		MemoryPage*	FreePageHead;
+
+		// thread synchronization
+		SGD::Thread::H1CriticalSection MemoryArenaSyncObject;
 	};
 }
 }

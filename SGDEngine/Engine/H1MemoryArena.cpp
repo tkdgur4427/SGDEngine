@@ -32,6 +32,9 @@ using namespace SGD::Platform::Util;
 
 H1MemoryArena::MemoryPage::AllocOutput H1MemoryArena::AllocateInternal(const MemoryPage::AllocInput& Input)
 {
+	// synchronized allocation
+	SGD::Thread::H1ScopeLock ScopeLock(&MemoryArenaSyncObject);
+
 	// alloc output
 	MemoryPage::AllocOutput Output;
 
@@ -66,6 +69,9 @@ H1MemoryArena::MemoryPage::AllocOutput H1MemoryArena::AllocateInternal(const Mem
 
 void H1MemoryArena::DeallocateInternal(const MemoryPage::DeallocInput& Input)
 {
+	// synchronized deallocation
+	SGD::Thread::H1ScopeLock ScopeLock(&MemoryArenaSyncObject);
+
 	// looping naive memory pages
 	MemoryPage* CurrPage = PageHead.get();
 	while (CurrPage != nullptr)
@@ -303,11 +309,11 @@ void H1MemoryArena::MemoryPage::MarkAllocBits(bool InValue, int32 InOffset, int3
 	{
 		if (InValue) // mark it as allocated
 		{
-			Layout.AllocBitMask |= (1 << CurrOffset);
+			Layout.AllocBitMask |= (1ll << CurrOffset);
 		}
 		else // mark it as free (deallocated)
 		{
-			Layout.AllocBitMask &= ~(1 << CurrOffset);
+			Layout.AllocBitMask &= ~(1ll << CurrOffset);
 		}
 	}
 }
@@ -319,12 +325,12 @@ void H1MemoryArena::MemoryPage::ValidateAllocBits(bool InValue, int32 InOffset, 
 		if (InValue) // mark it as allocated
 		{
 			// trigger assert
-			h1MemCheck((Layout.AllocBitMask & (1 << CurrOffset)) == 0, "invalid alloc bit please check!");		
+			h1MemCheck((Layout.AllocBitMask & (1ll << CurrOffset)) == 0, "invalid alloc bit please check!");
 		}
 		else // mark it as free (deallocated)
 		{
 			// trigger assert
-			h1MemCheck((Layout.AllocBitMask ^ (1 << CurrOffset)) == 1, "invalid alloc bit please check!");
+			h1MemCheck((Layout.AllocBitMask ^ (1ll << CurrOffset)) == 1, "invalid alloc bit please check!");
 		}
 	}
 }

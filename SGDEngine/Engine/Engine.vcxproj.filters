@@ -56,6 +56,9 @@
     <ClInclude Include="H1CompileTimeAssert.h">
       <Filter>Assert</Filter>
     </ClInclude>
+    <ClInclude Include="H1CriticalSection.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
@@ -72,5 +75,8 @@
       <Filter>Thread</Filter>
     </ClCompile>
     <ClCompile Include="H1GlobalSingleton.cpp" />
+    <ClCompile Include="H1WorkerThread.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
