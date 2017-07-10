@@ -342,12 +342,20 @@ namespace Memory
 			// 1. allocate params
 			struct AllocInput
 			{
+				AllocInput()
+					: BlockCount(0)
+				{}
+
 				// requested memory block count
 				int32 BlockCount; 
 			};
 
 			struct AllocOutput
 			{				
+				AllocOutput()
+					: TagId(-1), Offset(-1), Count(-1), BaseAddress(nullptr)
+				{}
+
 				// memory page id (tag id)
 				uint32 TagId;
 				// memory block offset and count
@@ -361,6 +369,10 @@ namespace Memory
 			// 2. deallocate params
 			struct DeallocInput
 			{
+				DeallocInput()
+					: TagId(-1), Offset(-1), Count(-1)
+				{}
+
 				// memory page id (tag id)
 				uint32 TagId;
 

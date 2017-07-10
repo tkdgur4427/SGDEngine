@@ -17,22 +17,36 @@ namespace Memory
 		H1MemStack()
 			: Head(nullptr)
 			, MarkHead(nullptr)
+			, CurrAddress(nullptr)
 		{}
 
 		// push the memory size
 		byte* Push(uint64 Size)
 		{
-			// check if the current memory tag has available size
-			byte* BaseAddress = Head->MemoryBlock.BaseAddress;
-			byte* CurrAddress = CurrAddress;
+			byte* BaseAddress = nullptr;
+			uint64 AllocatedSize = 0;
+			uint64 AvailableSize = 0;
 
-			uint64 AllocatedSize = CurrAddress - BaseAddress;
-			uint64 AvailableSize = MemoryTag::DATA_SIZE - AllocatedSize;
+			if (Head == nullptr)
+			{
+				// do nothing
+			}
+			else
+			{
+				// check if the current memory tag has available size
+				BaseAddress = Head->MemoryBlock.BaseAddress;
+
+				AllocatedSize = CurrAddress - BaseAddress;
+				AvailableSize = MemoryTag::DATA_SIZE - AllocatedSize;
+			}
 
 			if (Size > AvailableSize)
 			{
-				// mark end address
-				Head->EndAddress = CurrAddress;
+				if (Head != nullptr)
+				{
+					// mark end address
+					Head->EndAddress = CurrAddress;
+				}				
 
 				// allocate new memory tag
 				Head = MemoryTagFactory::CreateMemoryTag(Head);
@@ -46,7 +60,50 @@ namespace Memory
 			CurrAddress += Size;
 
 			return AllocatedAddress;
-		}	
+		}
+
+		bool Pop(uint64 Size)
+		{
+			// mark address should be higher than updated curr address (subtracted by size)
+			if (MarkHead->MarkedAddress >= CurrAddress - Size)
+			{
+				return false;
+			}
+
+			uint64 CurrSize = Size;
+
+			// if the current address reach to the head release the memory tag
+			byte* BaseAddress = Head->MemoryBlock.BaseAddress;
+			if (BaseAddress <= CurrAddress - Size)
+			{
+				// update current address
+				CurrSize -= ((CurrAddress - BaseAddress) - MemoryTag::HEADER_SIZE);
+
+				// release the memory tag until reaching to next mem mark
+				FreeMemoryTags(Head->Next);						
+			}
+
+			// process when the curr size is bigger than MemoryTag::DATA_SIZE
+			if (CurrSize > MemoryTag::DATA_SIZE)
+			{
+				int32 MemoryTagCountToDeallocate = CurrSize / MemoryTag::DATA_SIZE;
+
+				while (MemoryTagCountToDeallocate > 0)
+				{
+					// update current size
+					byte* BaseAddress = Head->MemoryBlock.BaseAddress;
+					CurrSize -= ((CurrAddress - BaseAddress) - MemoryTag::HEADER_SIZE);
+
+					// release current memory tag
+					FreeMemoryTags(Head->Next);
+				}
+			}
+
+			// finally update current address
+			CurrAddress -= CurrSize;
+
+			return true;
+		}
 
 		void Tick()
 		{
@@ -108,7 +165,7 @@ namespace Memory
 			};			
 
 		protected:
-			// firend class declaration
+			// friend class declaration
 			friend class H1MemoryTagFactory;
 
 			// memory tag can not create manually (MemoryTag should be mapped into H1MemoryBlock)
@@ -213,6 +270,9 @@ namespace Memory
 		}			
 
 	protected:
+		// friend class declaration
+		friend class H1MemStack;
+
 		// pop the memory stack reaching to the memmark
 		void Pop()
 		{

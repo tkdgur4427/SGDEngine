@@ -4,7 +4,7 @@ using namespace SGD::Thread;
 
 #include <process.h>
 
-bool appCreateThread(CreateThreadOutput& Output, const CreateThreadInput& Input, H1ThreadEntryPoint ThreadEntryPoint, bool bResume)
+bool SGD::Thread::appCreateThread(CreateThreadOutput& Output, const CreateThreadInput& Input, H1ThreadEntryPoint ThreadEntryPoint, bool bResume)
 {
 	// create thread with suspended
 	Output.ThreadHandle = CreateThread(nullptr, Input.StackSize, ThreadEntryPoint, nullptr, CREATE_SUSPENDED, (LPDWORD)&Output.ThreadId);
@@ -21,7 +21,7 @@ bool appCreateThread(CreateThreadOutput& Output, const CreateThreadInput& Input,
 	return true;
 }
 
-bool appDestroyThread(H1ThreadHandleType ThreadHandle)
+bool SGD::Thread::appDestroyThread(H1ThreadHandleType ThreadHandle)
 {
 	DWORD ExitCode;
 	if (GetExitCodeThread(ThreadHandle, &ExitCode) == 0)
@@ -33,33 +33,33 @@ bool appDestroyThread(H1ThreadHandleType ThreadHandle)
 	return true;
 }
 
-void appJoinThreads(const JointThreadInput& Input)
+void SGD::Thread::appJoinThreads(const JointThreadInput& Input)
 {
 	WaitForMultipleObjects(Input.NumThreads, Input.ThreadArray, true, INFINITE);
 }
 
-H1ThreadIdType appGetCurrentThreadId()
+H1ThreadIdType SGD::Thread::appGetCurrentThreadId()
 {
 	return GetCurrentThreadId();
 }
 
-void appSetThreadAffinity(H1ThreadHandleType ThreadHandle, uint32 CPUCoreId)
+void SGD::Thread::appSetThreadAffinity(H1ThreadHandleType ThreadHandle, uint32 CPUCoreId)
 {
 	DWORD_PTR Mask = 1ull << CPUCoreId;
 	SetThreadAffinityMask(ThreadHandle, Mask);
 }
 
-void appSleep(int32 MilliSeconds)
+void SGD::Thread::appSleep(int32 MilliSeconds)
 {
 	Sleep(MilliSeconds);
 }
 
-int32 appInterlockedCompareExchange32(volatile int32* Dest, int32 Exchange, int32 Comperand)
+int32 SGD::Thread::appInterlockedCompareExchange32(volatile int32* Dest, int32 Exchange, int32 Comperand)
 {
 	return InterlockedCompareExchange((volatile LONG*)Dest, (LONG)Exchange, (LONG)Comperand);
 }
 
-int64 appInterlockedCompareExchange64(volatile int64* Dest, int64 Exchange, int64 Comperand)
+int64 SGD::Thread::appInterlockedCompareExchange64(volatile int64* Dest, int64 Exchange, int64 Comperand)
 {
 	return InterlockedCompareExchange64(Dest, Exchange, Comperand);
 }

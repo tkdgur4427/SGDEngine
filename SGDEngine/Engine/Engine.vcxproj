@@ -124,6 +124,7 @@
     <ClInclude Include="H1CriticalSection.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
+    <ClInclude Include="H1LaunchEngineLoop.h" />
     <ClInclude Include="H1Memory.h" />
     <ClInclude Include="H1MemoryArena.h" />
     <ClInclude Include="H1MemStack.h" />
@@ -138,6 +139,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="H1GlobalSingleton.cpp" />
+    <ClCompile Include="H1LaunchEngineLoop.cpp" />
     <ClCompile Include="H1MemoryArena.cpp" />
     <ClCompile Include="H1PlatformThread.cpp" />
     <ClCompile Include="H1PlatformThreadWin32.cpp">

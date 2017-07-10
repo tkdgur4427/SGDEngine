@@ -16,7 +16,7 @@ bool appBitScanReverse(uint32& Offset, uint32 Mask)
 	return _BitScanReverse((unsigned long*)&Offset, Mask) != 0;
 }
 
-bool appBitScanReverse64(uint32& Offset, uint64 Mask)
+bool appBitScanReverse64(uint64& Offset, uint64 Mask)
 {
 	return _BitScanReverse64((unsigned long*)&Offset, Mask) != 0;
 }

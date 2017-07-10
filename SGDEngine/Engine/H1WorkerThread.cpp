@@ -8,9 +8,6 @@ using namespace SGD::Thread;
 
 bool H1WorkerUserThread_Imp::Initialize(H1WorkerThread_Context* Context)
 {
-	// initialize memstack
-	Context->MemStack.Push(H1WorkerThread_Context::INITIAL_MEMSTACK_SIZE);
-
 	return true;
 }
 

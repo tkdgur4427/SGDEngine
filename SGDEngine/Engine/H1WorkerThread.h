@@ -36,12 +36,6 @@ namespace Thread
 	class H1WorkerThread_Context
 	{
 	public:
-		enum
-		{
-			// setting initial memory stack as 1 MB (it could growable)
-			INITIAL_MEMSTACK_SIZE = 1 * 1024 * 1024,
-		};
-
 		// thread handle
 		H1ThreadHandleType ThreadHandle;
 		// thread id

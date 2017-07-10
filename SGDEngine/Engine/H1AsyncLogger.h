@@ -152,11 +152,177 @@ namespace Log
 		H1AsnycLogger
 			- this is logger to leave message asynchronously
 			- multi-threaded logging supported
-	*/
 
-	class H1AsyncLogger
+			- adapt the design for 'observer pattern' (subscriber - publisher?)
+	*/
+	
+	// forward declaration
+	class H1AsyncLoggerAdmin;
+
+	struct H1AsyncLoggerNode
+	{
+		// async logger log character type
+		enum AsyncLoggerType
+		{
+			CHAR, // char
+			// ...
+		};
+
+		H1AsyncLoggerNode()
+			: Next(nullptr)
+		{}
+
+		// binded thread id
+		H1ThreadIdType ThreadId;
+		// async logger type depending on character type
+		AsyncLoggerType Type;
+		// next ptr
+		H1AsyncLoggerNode* Next;
+	};
+
+	// subscribers for async logger
+	template <class CharType>
+	class H1AsyncLogger : public H1AsyncLoggerNode
 	{
 	public:
+		enum 
+		{
+			RingBufferSize = 512 * 1024, // 512 KB
+		};
+
+		H1AsyncLogger(byte* BaseAddress, int32 Size)
+			: RingBuffer(BaseAddress, Size)
+		{
+			// setting async logger type to convert correctly
+			Type = GetAsyncLoggerType();
+		}
+
+		AsyncLoggerType GetAsyncLoggerType()
+		{
+			AsyncLoggerType Result;
+
+			if (sizeof(CharType) == sizeof(char))
+			{
+				Result = AsyncLoggerType::CHAR;
+			}
+
+			return Result;
+		}
+
+		// data (ring buffer format)
+		H1LogRingBuffer<CharType> RingBuffer;
 	};
+
+	template <typename CharType>
+	class H1AsyncLoggerRegisterator
+	{
+	public:
+		static bool Register();
+		static bool Unregister();
+	};
+
+	// admin to manage multiple async logger and dump logs
+	class H1AsyncLoggerAdmin
+	{
+	public:
+		// template friend class declaration
+		template <typename CharType>
+		friend class H1AsyncLoggerRegisterator;
+
+		H1AsyncLoggerAdmin()
+			: Head(nullptr)
+		{}
+
+	protected:
+		// for preventing duplication checking of async logger for same thread id
+		bool IsExistAsyncLoggerByTheadId(H1ThreadIdType ThreadId)
+		{
+			// whether current thread already binded to async logger
+			bool Result = false;
+
+			while (Head != nullptr)
+			{
+				if (Head->ThreadId == ThreadId)
+				{
+					Result = true;
+					break;
+				}
+
+				Head = Head->Next;
+			}
+
+			return Result;
+		}
+
+		// async logger node linked list
+		H1AsyncLoggerNode* Head;
+	};
+
+	template <typename CharType>
+	bool H1AsyncLoggerRegisterator<CharType>::Register()
+	{
+		H1WorkerThread_Context* CurrThreadContext = nullptr;
+
+		// getting current thread context
+		if (GWorkerThreadContext == nullptr)
+		{
+			CurrThreadContext = GMainThreadContext;
+		}
+		else
+		{
+			CurrThreadContext = GWorkerThreadContext;
+		}
+
+		// check whether the async logger already exists
+		bool bIsExist = H1GlobalSingleton::AsyncLoggerAdmin()->IsExistAsyncLoggerByTheadId(CurrThreadContext->ThreadId);
+		if (bIsExist == true)
+		{
+			return false;
+		}
+
+		// first allocating ring buffer
+		int32 Size = H1AsyncLogger<CharType>::RingBufferSize;
+		byte* BaseAddress = GWorkerThreadContext->MemStack.Push(Size);
+
+		// next allocating S1AsnycLogger itself to the memory stack
+		H1AsyncLogger<CharType>* NewLogger = (H1AsyncLogger*)GWorkerThreadContext->MemStack.Push(sizeof(H1AsyncLogger));
+		*NewLogger = H1AsyncLogger<CharType>(BaseAddress, Size);
+
+		// setting new logger properties
+		NewLogger->ThreadId = CurrThreadContext->ThreadId;
+
+		// link to the admin
+		NewLogger->Next = H1GlobalSingleton::AsyncLoggerAdmin()->Head;
+		H1GlobalSingleton::AsyncLoggerAdmin()->Head = NewLogger;
+
+		return true;
+	}
+
+	template <typename CharType>
+	bool H1AsyncLoggerRegisterator<CharType>::Unregister()
+	{
+		H1WorkerThread_Context* CurrThreadContext = nullptr;
+
+		// getting current thread context
+		if (GWorkerThreadContext == nullptr)
+		{
+			CurrThreadContext = GMainThreadContext;
+		}
+		else
+		{
+			CurrThreadContext = GWorkerThreadContext;
+		}
+
+		// check whether the async logger exists
+		bool bIsExist = H1GlobalSingleton::AsyncLoggerAdmin()->IsExistAsyncLoggerByTheadId(CurrThreadContext->ThreadId);
+		if (bIsExist == false)
+		{
+			return false;
+		}
+
+
+
+		return true;
+	}
 }
 }

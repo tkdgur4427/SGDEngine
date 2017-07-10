@@ -178,13 +178,15 @@ H1MemoryArena::MemoryPage* H1MemoryArena::AllocatePage()
 
 	// properly link new page
 	NewPage->SetNextPage(PageHead);
-	PageHead = eastl::move(NewPage);
 
 	// properly link new free page
 	NewPage->SetNextFreePage(FreePageHead);
 	FreePageHead = eastl::move(NewPage.get());
 
-	return NewPage.get();
+	// lastly move the new page to page head (this is because after eastl::move, NewPage become nullptr)
+	PageHead = eastl::move(NewPage);	
+
+	return PageHead.get();
 }
 
 void H1MemoryArena::DeallocateAllPages()
@@ -251,13 +253,13 @@ int32 H1MemoryArena::MemoryPage::GetAvailableBlockIndex(int32 InBlockCount)
 	int32 Offset = -1;
 
 	// copy the bit alloc flag
-	uint64 AllocMask = Layout.AllocBitMask;
+	uint64 AllocMask = ~(Layout.AllocBitMask); // change bit opposite (to use BitScanForward)
 	// copy the block count
-	int32 BlockCount = InBlockCount;
+	int64 BlockCount = static_cast<int64>(InBlockCount);
 
 	// if the block count becomes zero, it found the offset
-	uint32 StartOffset = -1;
-	uint32 CurrOffset = 0;
+	uint64 StartOffset = -1;
+	uint64 CurrOffset = 0;
 	while (BlockCount > 0)
 	{
 		// first find the nonzero bit		
@@ -279,7 +281,7 @@ int32 H1MemoryArena::MemoryPage::GetAvailableBlockIndex(int32 InBlockCount)
 		while (BlockCount > 0)
 		{
 			// test bit and set it as allocated
-			if (appBitTestAndSet64(CurrOffset, AllocMask))
+			if (appBitTestAndReset64(CurrOffset, AllocMask))
 			{
 				CurrOffset++;
 				BlockCount--;
@@ -296,7 +298,8 @@ int32 H1MemoryArena::MemoryPage::GetAvailableBlockIndex(int32 InBlockCount)
 	// if the block count reach to 0, update the offset
 	if (BlockCount == 0)
 	{
-		Offset = StartOffset;
+		h1MemCheck(StartOffset < 65, "offset should not be bigger than 64 please check!");
+		Offset = (int32)StartOffset;
 	}
 
 	return Offset;
