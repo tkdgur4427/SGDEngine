@@ -71,7 +71,7 @@ void appMemzero(byte* Address, int64 Size)
 	memset(Address, 0, Size);
 }
 
-void appMemcpy(byte* SrcAddress, byte* DestAddress, int64 Size)
+void appMemcpy(const byte* SrcAddress, byte* DestAddress, int64 Size)
 {
 	memcpy(DestAddress, SrcAddress, Size);
 }

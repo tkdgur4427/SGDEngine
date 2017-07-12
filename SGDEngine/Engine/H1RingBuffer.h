@@ -163,25 +163,25 @@ namespace Util
 				if (DataSizeInBuffer > 0)
 				{
 					MaxToProduce = 0;
-					MaxToConsume = EndAddress - ConsumerPosition;
+					MaxToConsume = (int32)(EndAddress - ConsumerPosition);
 				}
 				else // if there is nothing to consume
 				{
-					MaxToProduce = EndAddress - ProducerPosition;
+					MaxToProduce = (int32)(EndAddress - ProducerPosition);
 					MaxToConsume = 0;
 				}
 			}
 
 			else if (ProducerPosition > ConsumerPosition)
 			{
-				MaxToProduce = EndAddress - ProducerPosition;
-				MaxToConsume = ProducerPosition - ConsumerPosition;
+				MaxToProduce = (int32)(EndAddress - ProducerPosition);
+				MaxToConsume = (int32)(ProducerPosition - ConsumerPosition);
 			}
 
 			else
 			{
-				MaxToProduce = ConsumerPosition - ProducerPosition;
-				MaxToConsume = EndAddress - ConsumerPosition;
+				MaxToProduce = (int32)(ConsumerPosition - ProducerPosition);
+				MaxToConsume = (int32)(EndAddress - ConsumerPosition);
 			}
 		}
 

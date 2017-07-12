@@ -141,6 +141,7 @@
     <ClCompile Include="H1GlobalSingleton.cpp" />
     <ClCompile Include="H1LaunchEngineLoop.cpp" />
     <ClCompile Include="H1MemoryArena.cpp" />
+    <ClCompile Include="H1MemStack.cpp" />
     <ClCompile Include="H1PlatformThread.cpp" />
     <ClCompile Include="H1PlatformThreadWin32.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

@@ -40,7 +40,7 @@ namespace Log
 		};
 
 		H1LogRingBuffer(byte* BaseAddress, int32 Size)
-			, Head(nullptr)
+			: Head(nullptr)
 		{	
 			// initialize ring buffer layout
 			Layout.Initialize(BaseAddress, Size);
@@ -145,7 +145,7 @@ namespace Log
 		H1LogNode<CharType>* Head;
 
 		// ring buffer layout
-		H1RingBufferLayout Layout;
+		SGD::Util::H1RingBufferLayout Layout;
 	};
 
 	/*

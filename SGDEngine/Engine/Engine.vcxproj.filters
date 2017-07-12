@@ -80,5 +80,8 @@
       <Filter>Thread</Filter>
     </ClCompile>
     <ClCompile Include="H1LaunchEngineLoop.cpp" />
+    <ClCompile Include="H1MemStack.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

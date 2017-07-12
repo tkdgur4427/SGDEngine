@@ -14,96 +14,11 @@ namespace Memory
 	class H1MemStack
 	{
 	public:
-		H1MemStack()
-			: Head(nullptr)
-			, MarkHead(nullptr)
-			, CurrAddress(nullptr)
-		{}
+		H1MemStack();
+		~H1MemStack();
 
-		// push the memory size
-		byte* Push(uint64 Size)
-		{
-			byte* BaseAddress = nullptr;
-			uint64 AllocatedSize = 0;
-			uint64 AvailableSize = 0;
-
-			if (Head == nullptr)
-			{
-				// do nothing
-			}
-			else
-			{
-				// check if the current memory tag has available size
-				BaseAddress = Head->MemoryBlock.BaseAddress;
-
-				AllocatedSize = CurrAddress - BaseAddress;
-				AvailableSize = MemoryTag::DATA_SIZE - AllocatedSize;
-			}
-
-			if (Size > AvailableSize)
-			{
-				if (Head != nullptr)
-				{
-					// mark end address
-					Head->EndAddress = CurrAddress;
-				}				
-
-				// allocate new memory tag
-				Head = MemoryTagFactory::CreateMemoryTag(Head);
-
-				// update the properties
-				CurrAddress = Head->MemoryBlock.BaseAddress;
-			}
-
-			// move the memory address
-			byte* AllocatedAddress = CurrAddress;
-			CurrAddress += Size;
-
-			return AllocatedAddress;
-		}
-
-		bool Pop(uint64 Size)
-		{
-			// mark address should be higher than updated curr address (subtracted by size)
-			if (MarkHead->MarkedAddress >= CurrAddress - Size)
-			{
-				return false;
-			}
-
-			uint64 CurrSize = Size;
-
-			// if the current address reach to the head release the memory tag
-			byte* BaseAddress = Head->MemoryBlock.BaseAddress;
-			if (BaseAddress <= CurrAddress - Size)
-			{
-				// update current address
-				CurrSize -= ((CurrAddress - BaseAddress) - MemoryTag::HEADER_SIZE);
-
-				// release the memory tag until reaching to next mem mark
-				FreeMemoryTags(Head->Next);						
-			}
-
-			// process when the curr size is bigger than MemoryTag::DATA_SIZE
-			if (CurrSize > MemoryTag::DATA_SIZE)
-			{
-				int32 MemoryTagCountToDeallocate = CurrSize / MemoryTag::DATA_SIZE;
-
-				while (MemoryTagCountToDeallocate > 0)
-				{
-					// update current size
-					byte* BaseAddress = Head->MemoryBlock.BaseAddress;
-					CurrSize -= ((CurrAddress - BaseAddress) - MemoryTag::HEADER_SIZE);
-
-					// release current memory tag
-					FreeMemoryTags(Head->Next);
-				}
-			}
-
-			// finally update current address
-			CurrAddress -= CurrSize;
-
-			return true;
-		}
+		byte* Push(uint64 Size);
+		bool Pop(uint64 Size);
 
 		void Tick()
 		{
@@ -132,6 +47,9 @@ namespace Memory
 			// lastly allocate pointer
 			//	- this address is NOT same as MemoryBlock.BaseAddress + MemoryTag::DATA_SIZE
 			byte* EndAddress;
+
+			// public methods
+			byte* GetStartAddress() { return &MemoryTag->Data[0]; }
 		};
 
 		// memory tag in memory stack
@@ -242,6 +160,23 @@ namespace Memory
 		byte* CurrAddress;
 		// 3. memory marks
 		H1MemMark* MarkHead;
+
+#if !FINAL_RELEASE
+		// tracking mem stack alloc
+		struct H1TrackStackAlloc
+		{
+			byte* StartAddress;
+			uint64 Size;
+			H1TrackStackAlloc* Next;
+		};
+
+		H1TrackStackAlloc* TrackStackAllocHead;
+
+		// methods
+		void CreateTrackStackAlloc(byte* StartAddress, uint64 Size);
+		void ReleaseTrackStackAlloc(byte* StartAddress, uint64 Size);
+		void ReleaseTackStackAllocAll();
+#endif
 	};
 
 	// motivated from UE3
