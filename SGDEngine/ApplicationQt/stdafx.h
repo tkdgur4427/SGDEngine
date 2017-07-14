@@ -13,3 +13,7 @@
 #pragma comment(lib, "..\\x64\\Debug\\Core.lib")
 #pragma comment(lib, "..\\x64\\Debug\\Engine.lib")
 #endif
+
+//#include <vector>
+//template<T>
+//using SDGVector<T> = std::vector<T, std::allocator>;

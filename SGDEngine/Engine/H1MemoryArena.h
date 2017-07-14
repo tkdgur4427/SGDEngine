@@ -90,7 +90,6 @@ namespace Memory
 		enum { MAX_LEN = 127, };
 
 		H1Log()
-			: Next(nullptr), FreeNext(nullptr)
 		{
 			// empty the data
 			memset(Data, 0, sizeof(Data));

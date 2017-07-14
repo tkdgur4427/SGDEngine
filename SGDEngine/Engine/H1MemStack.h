@@ -134,23 +134,7 @@ namespace Memory
 
 		// free memory tags
 		//	- reaching to NewHead
-		void FreeMemoryTags(MemoryTagHeader* NewHead)
-		{
-			// looping memory tags
-			while (Head != NewHead)
-			{
-				MemoryTagHeader* CurrHead = Head;
-
-				// update head
-				Head = CurrHead->Next;
-
-				// restore the curr address
-				CurrAddress = Head->EndAddress;
-
-				// destroy current memory tag
-				MemoryTagFactory::DestroyMemoryTag(CurrHead);				
-			}
-		}
+		void FreeMemoryTags(MemoryTagHeader* NewHead);
 
 		// member variables
 		// 1. memory tag header (Head)
@@ -166,6 +150,8 @@ namespace Memory
 		struct H1TrackStackAlloc
 		{
 			byte* StartAddress;
+			MemoryTagHeader* MemoryTag;
+
 			uint64 Size;
 			H1TrackStackAlloc* Next;
 		};
@@ -175,6 +161,7 @@ namespace Memory
 		// methods
 		void CreateTrackStackAlloc(byte* StartAddress, uint64 Size);
 		void ReleaseTrackStackAlloc(byte* StartAddress, uint64 Size);
+		void ReleaseTackStackAllocByAddress(byte* EndAddress, MemoryTagHeader* MemoryTag);
 		void ReleaseTackStackAllocAll();
 #endif
 	};
@@ -216,6 +203,11 @@ namespace Memory
 
 			// update curr address
 			OwnerStack.CurrAddress = MarkedAddress;
+
+#if !FINAL_RELEASE
+			// remove debugging information for memory stack tracer
+			OwnerStack.ReleaseTackStackAllocByAddress(MarkedAddress, MarkedMemoryTag);
+#endif
 		}
 
 		H1MemStack& OwnerStack;
