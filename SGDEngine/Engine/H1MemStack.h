@@ -19,6 +19,7 @@ namespace Memory
 
 		byte* Push(uint64 Size);
 		bool Pop(uint64 Size);
+		bool Pop(void* Pointer);
 
 		void Tick()
 		{
@@ -161,6 +162,8 @@ namespace Memory
 		// methods
 		void CreateTrackStackAlloc(byte* StartAddress, uint64 Size);
 		void ReleaseTrackStackAlloc(byte* StartAddress, uint64 Size);
+		void ReleaseCurrentHeadTrackStackAllocInternal();
+
 		void ReleaseTackStackAllocByAddress(byte* EndAddress, MemoryTagHeader* MemoryTag);
 		void ReleaseTackStackAllocAll();
 #endif
@@ -220,4 +223,15 @@ namespace Memory
 		H1MemMark* Next;
 	};
 }
+}
+
+// operator new overrides
+inline void* operator new(std::size_t Size, SGD::Memory::H1MemStack& MemStack)
+{
+	return MemStack.Push(Size);
+}
+
+inline void* operator new[](std::size_t Size, SGD::Memory::H1MemStack& MemStack)
+{
+	return MemStack.Push(Size);
 }

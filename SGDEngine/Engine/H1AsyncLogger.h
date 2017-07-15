@@ -254,7 +254,13 @@ namespace Log
 			return Result;
 		}
 
+		void Link(H1AsyncLoggerNode* NewNode)
+		{
+
+		}
+
 		// async logger node linked list
+		// todo) make it thread safe
 		H1AsyncLoggerNode* Head;
 	};
 
@@ -295,6 +301,9 @@ namespace Log
 		NewLogger->Next = H1GlobalSingleton::AsyncLoggerAdmin()->Head;
 		H1GlobalSingleton::AsyncLoggerAdmin()->Head = NewLogger;
 
+		// set new logger to thread context
+		CurrThreadContext->Logger = NewLogger;
+
 		return true;
 	}
 
@@ -313,14 +322,19 @@ namespace Log
 			CurrThreadContext = GWorkerThreadContext;
 		}
 
-		// check whether the async logger exists
-		bool bIsExist = H1GlobalSingleton::AsyncLoggerAdmin()->IsExistAsyncLoggerByTheadId(CurrThreadContext->ThreadId);
-		if (bIsExist == false)
+		// get the logger
+		H1AsyncLogger<CharType>* Logger = CurrThreadContext->Logger;
+
+		// deallocating ring buffer
+		int32 Size = H1AsyncLogger<CharType>::RingBufferSize;
+		bool bFreed = GWorkerThreadContext->MemStack.Pop(Size);
+
+		if (!bFreed)
 		{
 			return false;
 		}
 
-
+		// unlink this logger
 
 		return true;
 	}

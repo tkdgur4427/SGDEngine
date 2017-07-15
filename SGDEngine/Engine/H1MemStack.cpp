@@ -17,12 +17,8 @@ void H1MemStack::CreateTrackStackAlloc(byte* StartAddress, uint64 Size)
 	TrackStackAllocHead = NewNode;
 }
 
-void H1MemStack::ReleaseTrackStackAlloc(byte* StartAddress, uint64 Size)
+void H1MemStack::ReleaseCurrentHeadTrackStackAllocInternal()
 {
-	// check whether current head has same Size
-	h1MemCheckf(TrackStackAllocHead->Size == Size, "invalid operation to release the memory stack (%d != %d)", TrackStackAllocHead->Size, Size);
-	h1MemCheckf(TrackStackAllocHead->StartAddress == StartAddress, "invalid operation to release the memory stack (%x != %x)", TrackStackAllocHead->StartAddress, StartAddress);
-
 	// release head node
 	H1TrackStackAlloc* RemoveNode = TrackStackAllocHead;
 	// update the node first
@@ -31,14 +27,21 @@ void H1MemStack::ReleaseTrackStackAlloc(byte* StartAddress, uint64 Size)
 	delete RemoveNode;
 }
 
+void H1MemStack::ReleaseTrackStackAlloc(byte* StartAddress, uint64 Size)
+{
+	// check whether current head has same Size
+	h1MemCheckf(TrackStackAllocHead->Size == Size, "invalid operation to release the memory stack (%d != %d)", TrackStackAllocHead->Size, Size);
+	h1MemCheckf(TrackStackAllocHead->StartAddress == StartAddress, "invalid operation to release the memory stack (%x != %x)", TrackStackAllocHead->StartAddress, StartAddress);
+
+	ReleaseCurrentHeadTrackStackAllocInternal();
+}
+
 void H1MemStack::ReleaseTackStackAllocByAddress(byte* EndAddress, MemoryTagHeader* MemoryTag)
 {
 	// while reaching to the MemoryTag, release TrackStackAlloc
 	while (TrackStackAllocHead != nullptr && TrackStackAllocHead->MemoryTag != MemoryTag)
 	{
-		H1TrackStackAlloc* RemoveNode = TrackStackAllocHead;
-		TrackStackAllocHead = TrackStackAllocHead->Next;
-		delete RemoveNode;
+		ReleaseCurrentHeadTrackStackAllocInternal();
 	}
 
 	h1MemCheck(TrackStackAllocHead != nullptr, "please check did you put valid memory tag!");
@@ -46,13 +49,14 @@ void H1MemStack::ReleaseTackStackAllocByAddress(byte* EndAddress, MemoryTagHeade
 	// now, we are reaching to the memory tag and until reaching EndAddress, release node
 	while (TrackStackAllocHead->MemoryTag == MemoryTag && TrackStackAllocHead->StartAddress != EndAddress)
 	{
-		H1TrackStackAlloc* RemoveNode = TrackStackAllocHead;
-		TrackStackAllocHead = TrackStackAllocHead->Next;
-		delete RemoveNode;
+		ReleaseCurrentHeadTrackStackAllocInternal();
 	}
 
 	h1MemCheck(TrackStackAllocHead->MemoryTag == MemoryTag, "please check did you put valid end address!");
 	h1MemCheck(TrackStackAllocHead->StartAddress == EndAddress, "please check did you put valid end address!");
+
+	// lastly release the track stack alloc internally
+	ReleaseCurrentHeadTrackStackAllocInternal();
 }
 
 void H1MemStack::ReleaseTackStackAllocAll()
@@ -60,9 +64,7 @@ void H1MemStack::ReleaseTackStackAllocAll()
 	// looping the list and release the nodes
 	while (TrackStackAllocHead != nullptr)
 	{
-		H1TrackStackAlloc* RemoveNode = TrackStackAllocHead;
-		TrackStackAllocHead = TrackStackAllocHead->Next;
-		delete RemoveNode;
+		ReleaseCurrentHeadTrackStackAllocInternal();
 	}
 }
 #endif
@@ -75,7 +77,10 @@ H1MemStack::H1MemStack()
 	, TrackStackAllocHead(nullptr)
 #endif
 {
-
+	// create new head in the constructor
+	Head = MemoryTagFactory::CreateMemoryTag(Head);
+	// set current address of head memory tag
+	CurrAddress = Head->GetStartAddress();
 }
 
 H1MemStack::~H1MemStack()
@@ -159,6 +164,12 @@ bool H1MemStack::Pop(uint64 Size)
 #endif
 
 	return true;
+}
+
+bool H1MemStack::Pop(void* Pointer)
+{
+	uint64 Size = CurrAddress - (byte*)Pointer;
+	return Pop(Size);
 }
 
 void H1MemStack::FreeMemoryTags(MemoryTagHeader* NewHead)
