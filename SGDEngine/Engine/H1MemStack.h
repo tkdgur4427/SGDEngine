@@ -231,7 +231,17 @@ inline void* operator new(std::size_t Size, SGD::Memory::H1MemStack& MemStack)
 	return MemStack.Push(Size);
 }
 
+inline void operator delete(void* Pointer, SGD::Memory::H1MemStack& MemStack)
+{
+	// do nothing
+}
+
 inline void* operator new[](std::size_t Size, SGD::Memory::H1MemStack& MemStack)
 {
 	return MemStack.Push(Size);
+}
+
+inline void operator delete[](void* Pointer, SGD::Memory::H1MemStack& MemStack)
+{
+	// do nothing
 }

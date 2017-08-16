@@ -148,7 +148,7 @@ void H1MemoryArena::DeallocateMemoryBlocks(const H1MemoryBlockRange& InMemoryBlo
 H1MemoryArena::MemoryPage* H1MemoryArena::AllocatePage()
 {
 	// create new page
-	eastl::unique_ptr<MemoryPage> NewPage = eastl::make_unique<MemoryPage>();
+	SGD::unique_ptr<MemoryPage> NewPage = SGD::make_unique<MemoryPage>();
 	// reset the page
 	SGD::Platform::Util::appMemzero((byte*)NewPage.get(), sizeof(MemoryPage));
 
@@ -157,10 +157,10 @@ H1MemoryArena::MemoryPage* H1MemoryArena::AllocatePage()
 
 	// properly link new free page
 	NewPage->SetNextFreePage(FreePageHead);
-	FreePageHead = eastl::move(NewPage.get());
+	FreePageHead = SGD::move(NewPage.get());
 
 	// lastly move the new page to page head (this is because after eastl::move, NewPage become nullptr)
-	PageHead = eastl::move(NewPage);	
+	PageHead = SGD::move(NewPage);	
 
 	return PageHead.get();
 }
@@ -178,10 +178,10 @@ void H1MemoryArena::DeallocateAllPages()
 	while (PageHead.get() == nullptr)
 	{
 		// get the unique
-		eastl::unique_ptr<MemoryPage> TempPageHead = eastl::move(PageHead);
+		SGD::unique_ptr<MemoryPage> TempPageHead = SGD::move(PageHead);
 
 		// move next page
-		PageHead = eastl::move(TempPageHead.get()->Layout.NextPage);
+		PageHead = SGD::move(TempPageHead.get()->Layout.NextPage);
 
 		// release the previous page head
 		TempPageHead.reset();

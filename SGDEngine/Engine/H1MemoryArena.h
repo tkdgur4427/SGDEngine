@@ -309,7 +309,7 @@ namespace Memory
 				// 1. alloc bit mask
 				uint64			AllocBitMask;
 				// 2. singly linked list (tracking next page and next free page)
-				eastl::unique_ptr<MemoryPage> NextPage;
+				SGD::unique_ptr<MemoryPage> NextPage;
 				MemoryPage*	NextFreePage;
 				// 3. unique id
 				//	- memory page cannot over the range of uint32 (it will over TB...)
@@ -329,7 +329,7 @@ namespace Memory
 			// methods
 			bool IsFull() const { return Layout.AllocBitMask != ALLOC_BIT_MASK_FULL; }
 
-			void SetNextPage(eastl::unique_ptr<MemoryPage>& NewPage) { Layout.NextPage = eastl::move(NewPage); }
+			void SetNextPage(SGD::unique_ptr<MemoryPage>& NewPage) { Layout.NextPage = SGD::move(NewPage); }
 			void SetNextFreePage(MemoryPage* NewFreePage) { Layout.NextFreePage = NewFreePage; }
 
 			MemoryPage* GetNextPage() { return Layout.NextPage.get(); }
@@ -403,7 +403,7 @@ namespace Memory
 		void DeallocateInternal(const MemoryPage::DeallocInput& Input);
 
 		// memory pages
-		eastl::unique_ptr<MemoryPage> PageHead;
+		SGD::unique_ptr<MemoryPage> PageHead;
 		MemoryPage*	FreePageHead;
 
 		// thread synchronization

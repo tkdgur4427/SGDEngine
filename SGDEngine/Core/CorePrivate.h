@@ -1,7 +1,10 @@
 #pragma once
-// EASTL definitions
 
-// EASTL headers
-#include "EASTL\\unique_ptr.h"
+// base type declarations
+typedef unsigned char byte;
+typedef int int32;
+typedef unsigned int uint32;
+typedef long long int64;
+typedef unsigned long long uint64;
 
-#include "EASTL\\string.h"
+#include "StlOverride.h"
