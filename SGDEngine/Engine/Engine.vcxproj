@@ -125,6 +125,7 @@
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
     <ClInclude Include="H1LaunchEngineLoop.h" />
+    <ClInclude Include="H1LockFreeStack.h" />
     <ClInclude Include="H1Memory.h" />
     <ClInclude Include="H1MemoryArena.h" />
     <ClInclude Include="H1MemStack.h" />

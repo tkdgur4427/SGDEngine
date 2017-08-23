@@ -60,6 +60,9 @@
       <Filter>Thread</Filter>
     </ClInclude>
     <ClInclude Include="H1LaunchEngineLoop.h" />
+    <ClInclude Include="H1LockFreeStack.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
