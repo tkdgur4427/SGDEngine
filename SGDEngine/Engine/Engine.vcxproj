@@ -121,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="H1CompileTimeAssert.h" />
     <ClInclude Include="H1AsyncLogger.h" />
+    <ClInclude Include="H1ConcurrentNode.h" />
     <ClInclude Include="H1CriticalSection.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
