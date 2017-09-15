@@ -335,6 +335,7 @@ namespace Log
 		}
 
 		// unlink this logger
+		CurrThreadContext->Logger = nullptr;
 
 		return true;
 	}
