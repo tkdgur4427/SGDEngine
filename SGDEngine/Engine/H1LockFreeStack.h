@@ -36,6 +36,8 @@ namespace Thread
 			H1ConcurrentNode<DataType>* NewNode = TempFreeNodes->Head;
 			TempFreeNodes->Head = NewNode->GetNext();
 
+			ReturnFreeNodes();
+
 			// unlink new node from head
 			NewNode->SetNext(nullptr);
 			
@@ -50,6 +52,8 @@ namespace Thread
 			// now start to push the element with the new node
 			NewNode->SetNext(TempHead->Head);
 			TempHead->Head = NewNode;
+
+			ReturnHead();
 		}
 
 		DataType Pop()
