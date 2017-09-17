@@ -19,7 +19,7 @@ namespace SGD
 	template<typename T>
 	unique_ptr<T> make_unique(int32 size)
 	{
-		std::make_unique<T>(size);
+		return std::make_unique<T>(size);
 	}
 
 #if (__cplusplus <= 201402L) // until c++14

@@ -63,6 +63,9 @@
     <ClInclude Include="H1LockFreeStack.h">
       <Filter>Thread</Filter>
     </ClInclude>
+    <ClInclude Include="H1ConcurrentNode.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
@@ -85,6 +88,9 @@
     <ClCompile Include="H1LaunchEngineLoop.cpp" />
     <ClCompile Include="H1MemStack.cpp">
       <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="H1ConcurrentNode.cpp">
+      <Filter>Thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
