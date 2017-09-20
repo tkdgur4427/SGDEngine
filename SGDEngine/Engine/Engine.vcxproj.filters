@@ -89,5 +89,8 @@
     <ClCompile Include="H1MemStack.cpp">
       <Filter>Memory</Filter>
     </ClCompile>
+    <ClCompile Include="H1ConcurrentNode.cpp">
+      <Filter>Thread</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

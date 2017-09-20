@@ -137,6 +137,7 @@
     <ClInclude Include="H1WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="H1ConcurrentNode.cpp" />
     <ClCompile Include="H1EnginePrivate.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>

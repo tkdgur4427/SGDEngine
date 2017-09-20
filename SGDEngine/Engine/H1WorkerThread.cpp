@@ -1,6 +1,9 @@
 #include "H1EnginePrivate.h"
 #include "H1WorkerThread.h"
 
+// async logger for thread
+#include "H1AsyncLogger.h"
+
 // extern variable initialization
 thread_local SGD::Thread::H1WorkerThread_Context* GWorkerThreadContext = nullptr;
 
