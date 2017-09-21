@@ -119,6 +119,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="H1AllocPolicy.h" />
     <ClInclude Include="H1BlockAllocPolicy.h" />
     <ClInclude Include="H1CompileTimeAssert.h" />
     <ClInclude Include="H1AsyncLogger.h" />

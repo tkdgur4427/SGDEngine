@@ -78,6 +78,9 @@
     <ClInclude Include="H1MemoryLogger.h">
       <Filter>Memory\Memory Logger</Filter>
     </ClInclude>
+    <ClInclude Include="H1AllocPolicy.h">
+      <Filter>Memory\AllocPolicy</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
