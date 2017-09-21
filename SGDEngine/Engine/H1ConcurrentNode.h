@@ -157,6 +157,19 @@ namespace Thread
 
 			return (NodeSizeType)(CurrBit - 4);
 		}
+		
+		// memory block allocator for concurrent node (by 64KB)
+		struct BlockAllocator
+		{
+			enum
+			{
+				// currently fixed block allocator exists (it should be same as total logical core number)
+				TotalNumAllocators = 8,	
+			};
+		};
+
+		// block allocator
+		BlockAllocator 
 
 		// concurrent node page wrapping memory block
 		//	- as linked-list, it also has NextPage pointer

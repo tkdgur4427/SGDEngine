@@ -22,6 +22,12 @@
     <Filter Include="Log">
       <UniqueIdentifier>{ba9484f7-4ae1-4180-beaa-c63299e329f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Memory\AllocPolicy">
+      <UniqueIdentifier>{dc8f721e-14ca-4293-8e24-dc1ca4a23533}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memory\Memory Logger">
+      <UniqueIdentifier>{a62965f7-a983-4b3b-ba9e-05a3d3e63ef6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H1PlatformUtil.h">
@@ -65,6 +71,12 @@
     </ClInclude>
     <ClInclude Include="H1ConcurrentNode.h">
       <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="H1BlockAllocPolicy.h">
+      <Filter>Memory\AllocPolicy</Filter>
+    </ClInclude>
+    <ClInclude Include="H1MemoryLogger.h">
+      <Filter>Memory\Memory Logger</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
