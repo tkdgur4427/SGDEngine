@@ -6,6 +6,23 @@
 		- managing entire logic in here as a game engine
 */
 
+// global variables
+namespace SGD
+{
+	class H1LaunchEngineLoopGlobal
+	{
+	public:
+		H1LaunchEngineLoopGlobal()
+			: FrameNumber(0)
+			, FrameNumberRenderThread(0)
+		{}
+
+		uint64 FrameNumber;
+		uint64 FrameNumberRenderThread;
+	};
+
+}
+
 // extern functionality for entering main thread (same as H1WorkerThread_Impl)
 
 extern void Init();

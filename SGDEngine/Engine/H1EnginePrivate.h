@@ -10,7 +10,6 @@
 // final release flag
 #define FINAL_RELEASE 0
 
-// EASTL
 #include "CorePrivate.h"
 
 // static assert (compile-time)
@@ -24,3 +23,6 @@
 
 // thread
 #include "H1PlatformThread.h"
+
+// global singleton
+#include "H1GlobalSingleton.h"

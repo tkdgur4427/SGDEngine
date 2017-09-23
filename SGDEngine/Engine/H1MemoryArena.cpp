@@ -1,5 +1,6 @@
 #include "H1EnginePrivate.h"
 #include "H1MemoryArena.h"
+#include "H1MemoryLogger.h"
 using namespace SGD::Memory;
 
 // for using bit manipulation

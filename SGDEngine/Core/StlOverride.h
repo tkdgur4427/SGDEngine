@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <atomic>
 
 namespace SGD
 {
@@ -35,4 +36,12 @@ namespace SGD
 		return std::move(t);
 	}
 #endif
+
+	// atomic
+	template <class Type>
+	using atomic = std::atomic<Type>;
+
+	// numeric limits
+	template <class Type>
+	using numeric_limits = std::numeric_limits<Type>;
 }

@@ -5,6 +5,8 @@
 
 namespace SGD
 {
+	class H1LaunchEngineLoopGlobal;
+
 namespace Memory
 {
 	class H1MemoryArena;
@@ -20,4 +22,5 @@ class H1GlobalSingleton
 public:
 	static SGD::Memory::H1MemoryArena* MemoryArena();
 	static SGD::Log::H1AsyncLoggerAdmin* AsyncLoggerAdmin();
+	static SGD::H1LaunchEngineLoopGlobal* LaunchEngineLoopGlobal();
 };

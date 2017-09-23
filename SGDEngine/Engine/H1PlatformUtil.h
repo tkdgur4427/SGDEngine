@@ -1,3 +1,5 @@
+#pragma once
+
 namespace SGD {
 namespace Platform {
 namespace Util
@@ -25,6 +27,15 @@ namespace Util
 		// string
 		uint32 appStrLen(const char* Str);
 		void appStrcpy(const char* Src, char* Dest);
+
+		// alignment
+
+		// align a value to the nearest higher multiple of 'alignment', which must be a power of two
+		template <typename T>
+		inline T Align(const T Pointer, int64 Alignment)
+		{
+			return (T)(((int64)Pointer + Alignment - 1) & ~(Alignment - 1));
+		}
 }
 }
 }

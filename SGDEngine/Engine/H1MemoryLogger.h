@@ -1,9 +1,15 @@
 #pragma once
 
+#include "H1GlobalSingleton.h"
+
 namespace SGD
 {
 namespace Memory
 {
+	// forward declaration
+	template <class CharType>
+	class H1MemoryLogger;
+
 	/*
 	** memory log system
 	- memory log system is dedicated for memory, this is because official log system is not initialized during memory system	
@@ -19,9 +25,13 @@ namespace Memory
 		static void ForceToDump();
 
 	protected:
-		enum { MAX_LEN = 127, };
+		enum 
+		{ 
+			MAX_LEN = 127, 
+		};
 
-		H1Log()
+		H1MemoryLog()
+			: Next(nullptr)
 		{
 			// empty the data
 			memset(Data, 0, sizeof(Data));
@@ -30,6 +40,12 @@ namespace Memory
 	public:
 		// log data
 		CharType Data[MAX_LEN + 1];
+
+	private:
+		// only accessible from class H1MemoryLogger
+		friend class H1MemoryLogger<CharType>;
+
+		H1MemoryLog<CharType>* Next;
 	};
 
 	template<class CharType>
@@ -53,20 +69,19 @@ namespace Memory
 	protected:
 		static H1MemoryLogger* GetSingleton()
 		{
-			static H1MemoryArenaLogger MemoryArenaLogger;
+			static H1MemoryLogger MemoryArenaLogger;
 			return &MemoryArenaLogger;
 		}
 
 		// Header layout
 		struct HeaderLayout
 		{
-			// tracking current log index
-			int32 CurrLogIndex;
+			H1MemoryLog<CharType>* FreeHead;
 		};
 
 		enum
 		{
-			LogSize = sizeof(H1Log<CharType>),
+			LogSize = sizeof(H1MemoryLog<CharType>),
 			// memory arena log page size is 2MB
 			LogPageSize = 2 * 1024 * 1024,
 			// log count per page
@@ -85,7 +100,7 @@ namespace Memory
 			HeaderLayout Header;
 
 			// logs
-			H1Log<CharType> Logs[LogCountPerPage];
+			H1MemoryLog<CharType> Logs[LogCountPerPage];
 		};
 
 		union
@@ -93,7 +108,7 @@ namespace Memory
 			// logger layout
 			LoggerLayout Layout;
 
-			// data size limitation
+			// data size limitation (bounded)
 			byte Data[LogPageSize];
 		};
 
@@ -101,21 +116,31 @@ namespace Memory
 		void Initialize()
 		{
 			memset(Data, 0, sizeof(Data));
-			Layout.Header.CurrLogIndex = 0; // reset the current log index
+
+			// create free list
+			for (int32 Index = 0; Index < LogCountPerPage; ++Index)
+			{
+				H1MemoryLog<CharType>* CurrLog = &Layout.Logs[Index];
+
+				CurrLog->Next = Layout.Header.FreeHead;
+				Layout.Header.FreeHead = CurrLog;
+			}
 		}
 
 		// create new log
 		//	- give temporary log pointer (this should be used as scoped pointer do not store this as member variables)
-		H1Log<CharType>* CreateLog()
+		H1MemoryLog<CharType>* CreateLog()
 		{
-			// if it reach to the limit dump the result
-			if (Layout.Header.CurrLogIndex == LogCountLimit)
-			{
-				DumpLogs();
-			}
+			H1MemoryLog<CharType>* Result = nullptr;
+			H1MemoryLog<CharType>* NewHead = nullptr;
 
-			H1Log<CharType>* Result = &Layout.Logs[Layout.Header.CurrLogIndex];
-			Layout.Header.CurrLogIndex++;
+			// get the result log in lock-free
+			do 
+			{
+				Result = Layout.Header.FreeHead;				
+				NewHead = Result->Next;
+			} 
+			while ((H1MemoryLog<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)Result) != Result);
 
 			return Result;
 		}
@@ -123,45 +148,78 @@ namespace Memory
 		// dump the log
 		void DumpLogs()
 		{
-			// dump the log
-			for (int32 LogIndex = 0; LogIndex < Layout.Header.CurrLogIndex; ++LogIndex)
-			{
-				H1Log<CharType>& LogElement = Layout.Logs[LogIndex];
-				SGD::Platform::Util::appOutputDebugString(LogElement.Data);
-			}
+			H1MemoryLog<CharType>* DumpHead = nullptr;
+			H1MemoryLog<CharType>* NewHead = nullptr;
 
-			// reset the logs
-			Initialize();
+			// get the head safely and converting its head to nullptr
+			do 
+			{
+				DumpHead = Layout.Header.FreeHead;
+			} 
+			while ((H1MemoryLog<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)DumpHead) != DumpHead);
+
+			// now looping dumping head and print out
+			H1MemoryLog<CharType>* CurrLog = DumpHead;
+			while (CurrLog != nullptr)
+			{
+				// note that appOutputDebugString is safe to MT env.
+				SGD::Platform::Util::appOutputDebugString(CurrLog->Data);
+				CurrLog = CurrLog->Next;
+			}
 		}
 	};
 
 	// static member functions
 	template<class CharType>
-	void H1Log<CharType>::CreateLog(const CharType* Message)
+	void H1MemoryLog<CharType>::CreateLog(const CharType* Message)
 	{
-		H1Log<CharType>* NewLog = H1MemoryArenaLogger<CharType>::GetSingleton()->CreateLog();
+		H1MemoryLog<CharType>* NewLog = H1MemoryLogger<CharType>::GetSingleton()->CreateLog();
 
 		// string copy with safe strcpy
-		strcpy_s(NewLog->Data, H1Log<CharType>::MAX_LEN, Message);
+		strcpy_s(NewLog->Data, H1MemoryLog<CharType>::MAX_LEN, Message);
 	}
 
 	template<class CharType>
-	void H1Log<CharType>::CreateFormattedLog(const CharType* Format, ...)
+	void H1MemoryLog<CharType>::CreateFormattedLog(const CharType* Format, ...)
 	{
-		H1Log<CharType>* NewLog = H1MemoryArenaLogger<CharType>::GetSingleton()->CreateLog();
+		H1MemoryLog<CharType>* NewLog = H1MemoryLogger<CharType>::GetSingleton()->CreateLog();
 
 		// format the log
 		va_list Args;
 		va_start(Args, Format);
-		vsnprintf(NewLog->Data, H1Log<CharType>::MAX_LEN, Format, Args);
+		vsnprintf(NewLog->Data, H1MemoryLog<CharType>::MAX_LEN, Format, Args);
 		va_end(Args);
 	}
 
 	template<class CharType>
-	void H1Log<CharType>::ForceToDump()
+	void H1MemoryLog<CharType>::ForceToDump()
 	{
 		// force to dump logs (special usage for checkf)
-		H1MemoryArenaLogger<CharType>::GetSingleton()->DumpLogs();
+		H1MemoryLogger<CharType>::GetSingleton()->DumpLogs();
 	}
 }
 }
+
+// only for memory use formatted debugf and checkf
+#if !FINAL_RELEASE
+
+// memory debugf
+// debugf with message
+#define h1MemDebug(message) H1MemoryLog<char>::CreateLog(message);
+// debugf with formatted message
+#define h1MemDebugf(format, ...) H1MemoryLog<char>::CreateFormattedLog(format, __VA_ARGS__);
+// memory checkf
+// checkf with message
+#define h1MemCheck(condition, meessage) if(!(condition)) { H1MemoryLog<char>::CreateLog(meessage); H1MemoryLog<char>::ForceToDump(); __debugbreak(); }
+// checkf with formatted message
+#define h1MemCheckf(condition, format, ...) if(!(condition)) { H1MemoryLog<char>::CreateFormattedLog(format, __VA_ARGS__); H1MemoryLog<char>::ForceToDump(); __debugbreak(); }
+
+#else
+
+// disable debugf and checkf for final release mode
+#define h1MemDebug(message) __noop
+#define h1MemDebugf(format, ...) __noop
+#define h1MemCheck(condition, meessage) __noop
+#define h1MemCheckf(condition, format, ...) __noop
+
+#endif

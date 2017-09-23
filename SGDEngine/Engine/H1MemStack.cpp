@@ -1,6 +1,9 @@
 #include "H1EnginePrivate.h"
 #include "H1MemStack.h"
 
+// memory logger
+#include "H1MemoryLogger.h"
+
 using namespace SGD::Memory;
 
 #if !FINAL_RELEASE
