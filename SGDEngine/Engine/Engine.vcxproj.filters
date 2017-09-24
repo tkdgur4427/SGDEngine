@@ -84,6 +84,9 @@
     <ClInclude Include="H1Allocator.h">
       <Filter>Memory\Allocator</Filter>
     </ClInclude>
+    <ClInclude Include="H1Logger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
