@@ -3,6 +3,12 @@
 #include "H1Memory.h"
 #include "H1GlobalSingleton.h"
 
+// use memory logger to checkf
+#include "H1MemoryLogger.h"
+
+// block allocator
+#include "H1Allocator.h"
+
 namespace SGD
 {
 namespace Thread
@@ -129,6 +135,8 @@ namespace Thread
 			NodeSize_1KB,
 			NodeSize_2KB,
 			NodeSize_4KB,
+
+			// currently not supported for this sizes!
 			NodeSize_8KB,
 			NodeSize_16KB,
 			NodeSize_32KB,
@@ -157,40 +165,54 @@ namespace Thread
 				CurrSize = (int64)1 << CurrBit;
 			}
 
-			return (NodeSizeType)(CurrBit - 4);
-		}		
+			NodeSizeType Result = (NodeSizeType)(CurrBit - 4);
+			//h1MemCheck(Result > NodeSizeType::NodeSize_4KB, "currently node size bigger than 4KB is not supported!");
+
+			return Result;
+		}
 
 		// concurrent node page wrapping memory block
 		//	- as linked-list, it also has NextPage pointer
 		struct ConcurrentNodePage
 		{
+			enum 
+			{
+				NodePageSize = 4 * 1024, // 4KB page size
+			};
+
 			ConcurrentNodePage(int32 InConcurrentNodeSize)
-				: MemoryBlock(H1GlobalSingleton::MemoryArena()->AllocateMemoryBlock())
+				: Data(nullptr)
 				, NextPage(nullptr)
 				, ConcurrentNodeSize(InConcurrentNodeSize)
 			{
-				
+				// allocate page block
+				Data = BlockAllocator.Allocate(NodePageSize);
 			}
 
 			~ConcurrentNodePage()
 			{
 				// deallocate memory block
-				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlock(MemoryBlock);
+				BlockAllocator.Deallocate(Data);
 			}
 
-			byte* GetStartAddress() { return MemoryBlock.BaseAddress; }
-			int32 GetTotalSize() { return MemoryBlock.Size; }
+			byte* GetStartAddress() { return Data; }
+			int32 GetTotalSize() { return NodePageSize; }
 			int32 GetNodeSize() { return ConcurrentNodeSize; }
 
 			// public variable
+			// next page pointer
 			SGD::unique_ptr<ConcurrentNodePage> NextPage;
 
 		protected:
 			// concurrent node size
 			int32 ConcurrentNodeSize;
 
-			// concurrent node page unit is based on memory block (MEMORY_BLOCK_SIZE)
-			SGD::Memory::H1MemoryBlock MemoryBlock;
+			// concurrent node page data pointer
+			byte* Data;
+
+		private:
+			// block allocator for concurrent node page
+			static SGD::Memory::H1BlockAllocatorDefault<NodePageSize> BlockAllocator;
 		};
 
 		// concurrent node pool which has type of NodeSizeType

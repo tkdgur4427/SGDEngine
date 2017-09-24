@@ -18,10 +18,18 @@ namespace Memory
 	{
 	public:
 		// forcing to define its own alloc page for different alloc page policy
-		class H1AllocPage;
+		class H1AllocPage {};
 
-		virtual H1AllocPage* Allocate() = 0;
-		virtual void Deallocate(const H1AllocPage* InAllocPage) = 0;
+		H1AllocPage* Allocate()
+		{
+			h1MemCheck(false, "H1AllocPagePolicy should not be used itself");
+			return nullptr;
+		}
+
+		void Deallocate(H1AllocPage* InAllocPage)
+		{
+			h1MemCheck(false, "H1AllocPagePolicy should not be used itself");
+		}
 	};
 
 	/*
@@ -76,7 +84,7 @@ namespace Memory
 			H1AllocPageHeader Header;
 		};
 
-		virtual H1AllocPage* Allocate() final
+		H1AllocPage* Allocate() 
 		{
 			H1AllocPage* Result = nullptr;
 			H1AllocPage* NewHead = nullptr;
@@ -97,9 +105,11 @@ namespace Memory
 
 			} while (Result != nullptr
 				&& (H1AllocPage*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(FreeHead), (int64)NewHead, (int64)Result) != Result);
+
+			return Result;
 		}
 
-		virtual void Deallocate(const H1AllocPage* InAllocPage) final
+		void Deallocate(H1AllocPage* InAllocPage) 
 		{
 			H1AllocPage* NewHead = InAllocPage;
 			H1AllocPage* OldHead = nullptr;
@@ -122,7 +132,7 @@ namespace Memory
 		public:
 			static SGD::unique_ptr<H1AllocChunk> CreateChunk()
 			{
-				return SGD::make_unique<H1AllocChunk>();
+				return SGD::unique_ptr<H1AllocChunk>(new H1AllocChunk());
 			}
 
 			int32 GetSize() { return MemoryBlock.Size; }
@@ -131,17 +141,20 @@ namespace Memory
 			// next alloc chunk
 			SGD::unique_ptr<H1AllocChunk> Next;
 
+			// destruction is working as usual
+			~H1AllocChunk()
+			{
+				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlock(MemoryBlock);
+			}
+
 		protected:
+			friend class H1DefaultAllocPagePolicy;
+
 			H1AllocChunk()
 				: MemoryBlock(H1GlobalSingleton::MemoryArena()->AllocateMemoryBlock())
 			{
 
-			}
-
-			~H1AllocChunk()
-			{
-				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlock(MemoryBlock);
-			}			
+			}		
 
 		private:
 			SGD::Memory::H1MemoryBlock MemoryBlock;
@@ -198,8 +211,15 @@ namespace Memory
 		typedef typename AllocPagePolicy::H1AllocPage AllocPage;
 
 		// necessary methods to override to use allocator
-		virtual void* Allocate(uint64 InSize) = 0;
-		virtual void Deallocate(void* InPointer) = 0;
+		void* Allocate(uint64 InSize)
+		{
+			h1MemCheck(false, "H1AllocPolicy should be not created!");
+			return nullptr;
+		}
+		void Deallocate(void* InPointer)
+		{
+			h1MemCheck(false, "H1AllocPolicy should be not created!");
+		}
 	};
 }
 }

@@ -12,6 +12,7 @@ namespace Memory
 	template <class AllocPolicy>
 	class H1Allocator
 	{
+	public:
 		byte* Allocate(uint64 InSize)
 		{
 			return Policy.Allocate(InSize);
@@ -27,10 +28,9 @@ namespace Memory
 	};
 
 	// default block allocator
-	template <uint64 BlockSize, uint64 Alignment = 4>
-	class H1BlockAllocatorDefault : public H1Allocator < typename H1BlockAllocPolicy<H1BlockAllocParams<BlockSize, Alignment> >
+	template <int32 BlockSize, int32 Alignment = 4>
+	class H1BlockAllocatorDefault : public H1Allocator < H1BlockAllocPolicy<H1BlockAllocParams<BlockSize, Alignment> > >
 	{
-
-	}
+	};
 }
 }

@@ -15,6 +15,7 @@ namespace Memory
 	template <int32 InDataSize, int32 InAlignment = 4>
 	class H1BlockAllocParams
 	{
+	public:
 		enum 
 		{
 			// block alignment
@@ -35,6 +36,7 @@ namespace Memory
 	public:
 		class H1AllocBlock
 		{
+		public:
 			struct H1AllocBlockHeader
 			{
 				H1AllocBlock* Next;	// next block
@@ -46,14 +48,15 @@ namespace Memory
 				BlockSize = BlockAllocParam::BlockDataSize + BlockHeaderSize,
 			};
 
+			struct BlockLayout
+			{
+				byte Data[BlockAllocParam::BlockDataSize];
+				H1AllocBlockHeader Header;
+			};
+
 			union 
 			{
-				struct Layout
-				{
-					byte Data[BlockAllocParam::BlockDataSize];
-					H1AllocBlockHeader Header;
-				};
-
+				BlockLayout Layout;
 				byte Data[BlockSize];
 			};
 		};
@@ -70,7 +73,7 @@ namespace Memory
 			Destroy();
 		}
 
-		virtual byte* Allocate(uint64 InSize) final
+		byte* Allocate(uint64 InSize) 
 		{
 			h1MemCheck(InSize == BlockAllocParam::BlockDataSize, "size should be same as block data size!");
 
@@ -89,14 +92,14 @@ namespace Memory
 					continue;
 				}
 
-				NewHead = NewBlock->Header.Next;
+				NewHead = NewBlock->Layout.Header.Next;
 			} while (NewBlock != nullptr 
 				&& (H1AllocBlock*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeBlockHead, (int64)NewHead, (int64)NewBlock) != NewBlock);
 
-			return NewBlock->Data[0];
+			return &NewBlock->Data[0];
 		}
 
-		virtual void Deallocate(byte* InPointer) final
+		void Deallocate(byte* InPointer) 
 		{
 			H1AllocBlock* BlockToRemove = (H1AllocBlock*)InPointer;
 			H1AllocBlock* CurrHead = nullptr;
@@ -105,7 +108,7 @@ namespace Memory
 			do 
 			{
 				CurrHead = FreeBlockHead;
-				BlockToRemove->Header.Next = CurrHead;
+				BlockToRemove->Layout.Header.Next = CurrHead;
 			} while ((H1AllocBlock*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeBlockHead, (int64)BlockToRemove, (int64)CurrHead) != CurrHead);
 		}
 
@@ -147,7 +150,7 @@ namespace Memory
 			for (int32 Index = 0; Index < BlockCount; ++Index)
 			{
 				H1AllocBlock* NewBlock = (H1AllocBlock*)CurrAddress;
-				NewBlock->Header.Next = NewHead;
+				NewBlock->Layout.Header.Next = NewHead;
 				NewHead = NewBlock;
 
 				CurrAddress += H1AllocBlock::BlockSize;
@@ -158,7 +161,7 @@ namespace Memory
 			do 
 			{
 				CurrHead = FreeBlockHead;
-				BlockTail->Header.Next = CurrHead;
+				BlockTail->Layout.Header.Next = CurrHead;
 			} while ((H1AllocBlock*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeBlockHead, (int64)NewHead, (int64)CurrHead) != CurrHead);
 		}
 

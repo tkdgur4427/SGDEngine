@@ -11,6 +11,8 @@ int32 H1ConcurrentNodeFactory::ConcurrentNodePool::NodeSizes[NodeSizeType::NodeS
 	-1 // NodeSize_Big
 };
 
+SGD::Memory::H1BlockAllocatorDefault<H1ConcurrentNodeFactory::ConcurrentNodePage::NodePageSize> H1ConcurrentNodeFactory::ConcurrentNodePage::BlockAllocator;
+
 H1ConcurrentNodeFactory::H1ConcurrentNodeFactory()
 {
 	for (int32 Index = 0; Index < NodeSizeType::NodeSizeTypeNum; ++Index)

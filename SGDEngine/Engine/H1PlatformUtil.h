@@ -32,7 +32,7 @@ namespace Util
 
 		// align a value to the nearest higher multiple of 'alignment', which must be a power of two
 		template <typename T>
-		inline T Align(const T Pointer, int64 Alignment)
+		constexpr inline T Align(const T Pointer, int64 Alignment)
 		{
 			return (T)(((int64)Pointer + Alignment - 1) & ~(Alignment - 1));
 		}
