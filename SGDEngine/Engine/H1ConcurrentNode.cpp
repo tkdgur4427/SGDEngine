@@ -30,7 +30,7 @@ H1ConcurrentNodeFactory::~H1ConcurrentNodeFactory()
 H1ConcurrentNodeBase* H1ConcurrentNodeFactory::ConcurrentNodePool::AllocatePage()
 {
 	// create new node page
-	ConcurrentNodePage* NewPage = new ConcurrentNodePage();
+	ConcurrentNodePage* NewPage = new ConcurrentNodePage(GetNodeSize());
 
 	// link the new page in lock-free
 	ConcurrentNodePage* CurrPage = nullptr;

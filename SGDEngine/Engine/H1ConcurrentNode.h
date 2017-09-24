@@ -3,8 +3,7 @@
 #include "H1Memory.h"
 #include "H1GlobalSingleton.h"
 
-// use memory logger to checkf
-#include "H1MemoryLogger.h"
+#include "H1Logger.h"
 
 // block allocator
 #include "H1Allocator.h"
@@ -166,7 +165,7 @@ namespace Thread
 			}
 
 			NodeSizeType Result = (NodeSizeType)(CurrBit - 4);
-			//h1MemCheck(Result > NodeSizeType::NodeSize_4KB, "currently node size bigger than 4KB is not supported!");
+			h1Check(Result > NodeSizeType::NodeSize_4KB, "currently node size bigger than 4KB is not supported!");
 
 			return Result;
 		}

@@ -8,21 +8,21 @@
 
 // memory debugf
 // debugf with message
-#define h1MemDebug(message) SGD::Log::H1Log<char>::CreateLog(message);
+#define h1MemDebug h1Debug
 // debugf with formatted message
-#define h1MemDebugf(format, ...) SGD::Log::H1Log<char>::CreateFormattedLog(format, __VA_ARGS__);
+#define h1MemDebugf h1Debugf
 // memory checkf
 // checkf with message
-#define h1MemCheck(condition, meessage) if(!(condition)) { SGD::Log::H1Log<char>::CreateLog(meessage); SGD::Log::H1Log<char>::ForceToDump(); __debugbreak(); }
+#define h1MemCheck h1Check
 // checkf with formatted message
-#define h1MemCheckf(condition, format, ...) if(!(condition)) { SGD::Log::H1Log<char>::CreateFormattedLog(format, __VA_ARGS__); SGD::Log::H1Log<char>::ForceToDump(); __debugbreak(); }
+#define h1MemCheckf h1Checkf
 
 #else
 
 // disable debugf and checkf for final release mode
 #define h1MemDebug(message) __noop
 #define h1MemDebugf(format, ...) __noop
-#define h1MemCheck(condition, meessage) __noop
+#define h1MemCheck(condition, message) __noop
 #define h1MemCheckf(condition, format, ...) __noop
 
 #endif

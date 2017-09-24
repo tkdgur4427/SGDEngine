@@ -1,3 +1,5 @@
+#pragma once
+
 namespace SGD
 {
 namespace Log
@@ -192,3 +194,27 @@ namespace Log
 	}
 }
 }
+
+// only for memory use formatted debugf and checkf
+#if !FINAL_RELEASE
+
+// memory debugf
+// debugf with message
+#define h1Debug(message) SGD::Log::H1Log<char>::CreateLog(message);
+// debugf with formatted message
+#define h1Debugf(format, ...) SGD::Log::H1Log<char>::CreateFormattedLog(format, __VA_ARGS__);
+// memory checkf
+// checkf with message
+#define h1Check(condition, meessage) if(!(condition)) { SGD::Log::H1Log<char>::CreateLog(meessage); SGD::Log::H1Log<char>::ForceToDump(); __debugbreak(); }
+// checkf with formatted message
+#define h1Checkf(condition, format, ...) if(!(condition)) { SGD::Log::H1Log<char>::CreateFormattedLog(format, __VA_ARGS__); SGD::Log::H1Log<char>::ForceToDump(); __debugbreak(); }
+
+#else
+
+// disable debugf and checkf for final release mode
+#define h1Debug(message) __noop
+#define h1Debugf(format, ...) __noop
+#define h1Check(condition, meessage) __noop
+#define h1Checkf(condition, format, ...) __noop
+
+#endif
