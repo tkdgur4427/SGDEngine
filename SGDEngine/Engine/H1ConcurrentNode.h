@@ -201,7 +201,7 @@ namespace Thread
 
 			// public variable
 			// next page pointer
-			SGD::unique_ptr<ConcurrentNodePage> NextPage;
+			ConcurrentNodePage* NextPage;
 
 		protected:
 			// concurrent node size
@@ -221,9 +221,7 @@ namespace Thread
 			ConcurrentNodePool()
 				: Type(NodeSizeType::NodeSize_Invalid)
 				, PageHead(nullptr)
-				, PendingNodeHead(FreeConcurrentNodeWrapper::Empty)
-				, NodeHead(FreeConcurrentNodeWrapper::Normal)
-				, FreeNodeHead(&NodeHead)
+				, FreeNodeHead(nullptr)
 			{
 
 			}
@@ -246,46 +244,18 @@ namespace Thread
 			NodeSizeType Type;
 
 			// memory page list
-			SGD::unique_ptr<ConcurrentNodePage> PageHead;
+			ConcurrentNodePage* PageHead;
 
-			// static private array for size
+			// static private array for size table for node types
 			static int32 NodeSizes[NodeSizeType::NodeSizeTypeNum];
 
-			struct FreeConcurrentNodeWrapper
-			{
-				enum ConcurrentNodeType
-				{
-					Empty,
-					Normal,
-				};
-
-				H1ConcurrentNodeBase* FreeNodeHead;
-
-				FreeConcurrentNodeWrapper(ConcurrentNodeType InType)
-					: FreeNodeHead(nullptr)
-					, Type(InType)
-				{
-
-				}
-
-			protected:
-				ConcurrentNodeType Type;
-			};
-
 			// free list (lock-free stack way)
-			FreeConcurrentNodeWrapper* FreeNodeHead;
-
-			// you can think of this wrapper class as marker (real node or empty node)
-			FreeConcurrentNodeWrapper PendingNodeHead;	// when thread requests FreeNodeHead, this node is linked by FreeNodeHead, indicating it is pending
-			FreeConcurrentNodeWrapper NodeHead;	// the real free node head
+			H1ConcurrentNodeBase* FreeNodeHead;
 
 		protected:
 			// the methods to use lock-free ways (to reduce thread contention)
 			H1ConcurrentNodeBase* AllocateNodesInternal(int64 Num);
 			void DeallocateNodesInternal(H1ConcurrentNodeBase* InNode, int64 Num);
-
-			// get the FreeNodeHead in lock-free
-			FreeConcurrentNodeWrapper* GetFreeHead();
 
 		private:
 			// watch out, it should not be called other than AllocateNodesInternal!

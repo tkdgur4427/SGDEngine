@@ -130,16 +130,16 @@ namespace Memory
 		class H1AllocChunk
 		{
 		public:
-			static SGD::unique_ptr<H1AllocChunk> CreateChunk()
+			static H1AllocChunk* CreateChunk()
 			{
-				return SGD::unique_ptr<H1AllocChunk>(new H1AllocChunk());
+				return new H1AllocChunk();
 			}
 
 			int32 GetSize() { return MemoryBlock.Size; }
 			byte* GetStartAddress() { return MemoryBlock.BaseAddress; }
 
 			// next alloc chunk
-			SGD::unique_ptr<H1AllocChunk> Next;
+			H1AllocChunk* Next;
 
 			// destruction is working as usual
 			~H1AllocChunk()
@@ -152,6 +152,7 @@ namespace Memory
 
 			H1AllocChunk()
 				: MemoryBlock(H1GlobalSingleton::MemoryArena()->AllocateMemoryBlock())
+				, Next(nullptr)
 			{
 
 			}		
@@ -162,13 +163,18 @@ namespace Memory
 
 		void CreateNewChunk()
 		{
-			SGD::unique_ptr<H1AllocChunk> NewChunk = H1AllocChunk::CreateChunk();
+			H1AllocChunk* NewChunk = H1AllocChunk::CreateChunk();
 
-			NewChunk->Next = SGD::move(ChunkHead);
-			ChunkHead = SGD::move(NewChunk);
+			// link new chunk in lock-free
+			H1AllocChunk* CurrChunkHead = nullptr;
+			do 
+			{
+				CurrChunkHead = ChunkHead;
+				NewChunk->Next = CurrChunkHead;
+			} while ((H1AllocChunk*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&ChunkHead, (int64)NewChunk, (int64)CurrChunkHead) != CurrChunkHead);
 
 			// generate free pages based on ChunkHead
-			H1AllocChunk* NewHead = ChunkHead.get();
+			H1AllocChunk* NewHead = NewChunk;
 			int32 PageCount = NewHead->GetSize() / H1AllocPage::PageSize;			
 			byte* CurrAddress = NewHead->GetStartAddress();
 
@@ -196,7 +202,7 @@ namespace Memory
 		}
 
 		// managing chunk
-		SGD::unique_ptr<H1AllocChunk> ChunkHead;
+		H1AllocChunk* ChunkHead;
 	};
 
 	// base class for alloc policy

@@ -29,35 +29,23 @@ H1ConcurrentNodeFactory::~H1ConcurrentNodeFactory()
 
 H1ConcurrentNodeBase* H1ConcurrentNodeFactory::ConcurrentNodePool::AllocatePage()
 {
-	// find the last node page
+	// create new node page
+	ConcurrentNodePage* NewPage = new ConcurrentNodePage();
+
+	// link the new page in lock-free
 	ConcurrentNodePage* CurrPage = nullptr;
 
-	if (PageHead != nullptr)
+	do 
 	{
-		CurrPage = PageHead.get();
-
-		while (CurrPage->NextPage != nullptr)
-		{
-			CurrPage = CurrPage->NextPage.get();
-		}
-
-		// create new page and attach it
-		CurrPage->NextPage = SGD::make_unique<ConcurrentNodePage>(GetNodeSize());
-
-		// update current page
-		CurrPage = CurrPage->NextPage.get();
-	}
-	else // when there is no any page head, create new one
-	{
-		PageHead = SGD::make_unique<ConcurrentNodePage>(GetNodeSize());
-		CurrPage = PageHead.get();
-	}	
+		CurrPage = PageHead;
+		NewPage->NextPage = CurrPage;
+	} while ((ConcurrentNodePage*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&PageHead, (int64)NewPage, (int64)CurrPage) != CurrPage);
 
 	// generate free nodes with new page
-	int32 TotalNum = CurrPage->GetTotalSize() / CurrPage->GetNodeSize();
+	int32 TotalNum = NewPage->GetTotalSize() / NewPage->GetNodeSize();
 
 	int32 Offset = 0;
-	byte* StartAddress = CurrPage->GetStartAddress();
+	byte* StartAddress = NewPage->GetStartAddress();
 
 	H1ConcurrentNodeBase* NewNodeHead = nullptr; // temporary head for newly created for page
 
@@ -72,34 +60,16 @@ H1ConcurrentNodeBase* H1ConcurrentNodeFactory::ConcurrentNodePool::AllocatePage(
 		CurrNodeBase->SetNext(NewNodeHead);
 		NewNodeHead = CurrNodeBase;
 
-		Offset += CurrPage->GetNodeSize();
+		Offset += NewPage->GetNodeSize();
 	}
 
 	return NewNodeHead;
 }
 
-H1ConcurrentNodeFactory::ConcurrentNodePool::FreeConcurrentNodeWrapper* H1ConcurrentNodeFactory::ConcurrentNodePool::GetFreeHead()
-{
-	FreeConcurrentNodeWrapper* FreeHead = nullptr;
-	while (true)
-	{
-		FreeConcurrentNodeWrapper* Result = (FreeConcurrentNodeWrapper*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeNodeHead, (int64)(&PendingNodeHead), (int64)(&NodeHead));
-		if (Result == &PendingNodeHead)
-		{
-			FreeHead = &NodeHead;
-			break;
-		}
-	}
-
-	return FreeHead;
-}
-
 H1ConcurrentNodeBase* H1ConcurrentNodeFactory::ConcurrentNodePool::AllocateNodesInternal(int64 Num)
 {
 	// first get the free head in lock-free stack way
-	FreeConcurrentNodeWrapper* FreeHead = GetFreeHead();
-
-	H1ConcurrentNodeBase* CurrNode = FreeHead->FreeNodeHead;
+	H1ConcurrentNodeBase* CurrNode = FreeNodeHead;
 	for (int64 Index = 0; Index < Num; ++Index)
 	{
 		// if there is not enough nodes, create new page and attach new free nodes
