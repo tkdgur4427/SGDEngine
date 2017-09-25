@@ -66,9 +66,6 @@
       <Filter>Thread</Filter>
     </ClInclude>
     <ClInclude Include="H1LaunchEngineLoop.h" />
-    <ClInclude Include="H1LockFreeStack.h">
-      <Filter>Thread</Filter>
-    </ClInclude>
     <ClInclude Include="H1BlockAllocPolicy.h">
       <Filter>Memory\Allocator\AllocPolicy</Filter>
     </ClInclude>

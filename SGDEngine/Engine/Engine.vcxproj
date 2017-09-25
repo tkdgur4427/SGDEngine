@@ -128,7 +128,7 @@
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
     <ClInclude Include="H1LaunchEngineLoop.h" />
-    <ClInclude Include="H1LockFreeStack.h" />
+    <ClInclude Include="H1TaggedPointer.h" />
     <ClInclude Include="H1Logger.h" />
     <ClInclude Include="H1Memory.h" />
     <ClInclude Include="H1MemoryArena.h" />
@@ -137,7 +137,6 @@
     <ClInclude Include="H1PlatformUtil.h" />
     <ClInclude Include="H1PlatformThread.h" />
     <ClInclude Include="H1RingBuffer.h" />
-    <ClInclude Include="H1TaggedPointer.h" />
     <ClInclude Include="H1WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>
