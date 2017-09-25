@@ -109,7 +109,7 @@ namespace Memory
 			return Result;
 		}
 
-		void Deallocate(H1AllocPage* InAllocPage) 
+		void Deallocate(H1AllocPage* InAllocPage)
 		{
 			H1AllocPage* NewHead = InAllocPage;
 			H1AllocPage* OldHead = nullptr;

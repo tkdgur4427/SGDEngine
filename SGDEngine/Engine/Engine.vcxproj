@@ -137,6 +137,7 @@
     <ClInclude Include="H1PlatformUtil.h" />
     <ClInclude Include="H1PlatformThread.h" />
     <ClInclude Include="H1RingBuffer.h" />
+    <ClInclude Include="H1TaggedPointer.h" />
     <ClInclude Include="H1WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>
