@@ -87,6 +87,9 @@
     <ClInclude Include="H1Logger.h">
       <Filter>Log</Filter>
     </ClInclude>
+    <ClInclude Include="H1TaggedPointer.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
