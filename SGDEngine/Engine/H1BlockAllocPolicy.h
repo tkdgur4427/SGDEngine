@@ -2,6 +2,8 @@
 
 #include "H1AllocPolicy.h"
 
+#include "H1LockFreeStackImpl.h"
+
 namespace SGD
 {
 namespace Memory
@@ -37,27 +39,35 @@ namespace Memory
 		class H1AllocBlock
 		{
 		public:
-			struct H1AllocBlockHeader
+			struct H1AllocBlockHeader : public SGD::Container::SinglelyLinkedList::H1Node
 			{
-				H1AllocBlock* Next;	// next block
-			};
+				enum
+				{
+					BlockHeaderSize = SGD::Platform::Util::Align(sizeof(SGD::Container::SinglelyLinkedList::H1Node), BlockAllocParam::BlockAlignment),
+					BlockSize = BlockAllocParam::BlockDataSize + BlockHeaderSize,
+				};
 
-			enum 
-			{
-				BlockHeaderSize = SGD::Platform::Util::Align(sizeof(H1AllocBlockHeader), BlockAllocParam::BlockAlignment),
-				BlockSize = BlockAllocParam::BlockDataSize + BlockHeaderSize,
+				// get the real data pointer
+				byte* GetData() { return (byte*)this + BlockHeaderSize; }
+
+				// helper method for restoring block header
+				static H1AllocBlockHeader* RestoreAllocBlockHeader(byte* InData)
+				{
+					byte* RestoredHeader = InData - BlockHeaderSize;
+					return (H1AllocBlockHeader*)RestoreHeader;
+				}
 			};
 
 			struct BlockLayout
 			{
-				byte Data[BlockAllocParam::BlockDataSize];
 				H1AllocBlockHeader Header;
+				byte Data[BlockAllocParam::BlockDataSize];
 			};
 
 			union 
 			{
 				BlockLayout Layout;
-				byte Data[BlockSize];
+				byte Data[H1AllocBlockHeader::BlockSize];
 			};
 		};
 
@@ -77,39 +87,25 @@ namespace Memory
 		{
 			h1MemCheck(InSize == BlockAllocParam::BlockDataSize, "size should be same as block data size!");
 
-			H1AllocBlock* NewBlock = nullptr;
-			H1AllocBlock* NewHead = nullptr;
-
-			// pop the block from the head
-			do 
+			// if the head is nullptr, create new page
+			if (FreeBlockHead.GetNode() == nullptr)
 			{
-				NewBlock = FreeBlockHead;
+				CreateNewPage();
+			}
 
-				if (NewBlock == nullptr)
-				{
-					// if the head is nullptr, create new page, but need to repeat from the start so use continue
-					CreateNewPage();
-					continue;
-				}
+			// pop new block
+			SGD::Container::SinglelyLinkedList::H1Node* NewNode = SGD::Thread::LockFreeStack::Pop(FreeBlockHead);
+			H1AllocBlock::H1AllocBlockHeader* NewBlockHeader = (H1AllocBlock::H1AllocBlockHeader*)NewNode;
 
-				NewHead = NewBlock->Layout.Header.Next;
-			} while (NewBlock != nullptr 
-				&& (H1AllocBlock*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeBlockHead, (int64)NewHead, (int64)NewBlock) != NewBlock);
-
-			return &NewBlock->Data[0];
+			return NewBlockHeader->GetData();
 		}
 
 		void Deallocate(byte* InPointer) 
 		{
-			H1AllocBlock* BlockToRemove = (H1AllocBlock*)InPointer;
-			H1AllocBlock* CurrHead = nullptr;
-
-			// link removed block to the head
-			do 
-			{
-				CurrHead = FreeBlockHead;
-				BlockToRemove->Layout.Header.Next = CurrHead;
-			} while ((H1AllocBlock*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeBlockHead, (int64)BlockToRemove, (int64)CurrHead) != CurrHead);
+			H1AllocBlock::H1AllocBlockHeader* Header = H1AllocBlock::H1AllocBlockHeader::RestoreAllocBlockHeader(InPointer);
+			
+			// push to the free block head
+			SGD::Thread::Push(FreeBlockHead, Header);
 		}
 
 	protected:
@@ -157,17 +153,12 @@ namespace Memory
 			}
 
 			// link to the head (block) in lock-free
-			H1AllocBlock* CurrHead = nullptr;
-			do 
-			{
-				CurrHead = FreeBlockHead;
-				BlockTail->Layout.Header.Next = CurrHead;
-			} while ((H1AllocBlock*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeBlockHead, (int64)NewHead, (int64)CurrHead) != CurrHead);
+			SGD::Thread::LockFreeStack::Push(FreeBlockHead, NewHead->Layout.Header, BlockTail->Layout.Header);
 		}
 
 	protected:
 		// free block head
-		H1AllocBlock* FreeBlockHead;
+		SGD::Thread::LockFreeStack::H1LfsHead FreeBlockHead;
 
 		// managing the page
 		AllocPage* PageHead;

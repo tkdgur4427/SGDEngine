@@ -31,6 +31,9 @@
     <Filter Include="Memory\Allocator\AllocPolicy">
       <UniqueIdentifier>{dc8f721e-14ca-4293-8e24-dc1ca4a23533}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Containers">
+      <UniqueIdentifier>{a5e15e68-dfe8-4dc9-b236-410fc8852cca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H1PlatformUtil.h">
@@ -82,6 +85,12 @@
       <Filter>Log</Filter>
     </ClInclude>
     <ClInclude Include="H1TaggedPointer.h">
+      <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="H1SingleLinkedList.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="H1LockFreeStackImpl.h">
       <Filter>Thread</Filter>
     </ClInclude>
   </ItemGroup>

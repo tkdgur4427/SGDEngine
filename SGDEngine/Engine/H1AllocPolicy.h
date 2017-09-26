@@ -10,7 +10,7 @@
 #include "H1CriticalSection.h"
 
 // for preventing ABA problem
-#include "H1TaggedPointer.h"
+#include "H1LockFreeStackImpl.h"
 
 namespace SGD
 {
@@ -45,100 +45,60 @@ namespace Memory
 	public:
 		H1DefaultAllocPagePolicy()
 			: H1AllocPagePolicy()
-			, FreeHead(nullptr)
 		{
 
 		}
 
 		// H1AllocPage definition
-		class H1AllocPage
+		class H1AllocPage : public SGD::Container::SinglelyLinkedList::H1Node
 		{
 		public:
-			class H1AllocPageHeader
-			{
-			public:
-				H1AllocPageHeader()
-					: Next(nullptr)
-				{}
-
-				// next page
-				H1AllocPage* Next;
-			};
-
 			enum
 			{
-				HeaderSize = sizeof(H1AllocPageHeader),
-				DataSize = (63 * 1024) - HeaderSize,	// 64KB page allocation (excluding HeaderSize)
+				HeaderSize = sizeof(SGD::Container::SinglelyLinkedList::H1Node),
+				DataSize = (64 * 1024) - HeaderSize,	// 64KB page allocation (excluding HeaderSize)
 				PageSize = HeaderSize + DataSize,
 			};			
 
 			H1AllocPage() {}
 
 			// public methods
-			H1AllocPage* GetNext() { return Header.Next; }
-			void SetNext(H1AllocPage* InNext) { Header.Next = InNext; }
+			H1AllocPage* GetNext() { return Next; }
+			void SetNext(H1AllocPage* InNext) { Next = InNext; }
 
 			int32 GetSize() { return DataSize; }
 			byte* GetData() { return (byte*)this + HeaderSize; }
 
 		protected:
 			friend class H1DefaultAllocPagePolicy;
-
-			H1AllocPageHeader Header;
 		};
 
 		H1AllocPage* Allocate() 
 		{
-			SGD::Thread::H1TaggedPointer<H1AllocPage> NewHead;
-			SGD::Thread::H1TaggedPointer<H1AllocPage> OldHead;
-
-			do 
+			// if there is no valid node exists, create new chunk!
+			if (FreeHead.GetNode() == nullptr)
 			{
-				OldHead = FreeHead;
+				CreateNewChunk();
+			}
 
-				if (OldHead.GetNode() == nullptr)
-				{
-					CreateNewChunk();
+			// pop the new page from the free head
+			SGD::Container::SinglelyLinkedList::H1Node* NewNode = SGD::Thread::LockFreeStack::Pop(FreeHead);
+			H1AllocPage* NewPage = static_cast<H1AllocPage*>(NewNode);
 
-					// restart from setting Result!
-					continue;
-				}
-
-				// construct new head
-				NewHead = OldHead;
-				NewHead.SetNode(OldHead.GetNode()->GetNext());
-				NewHead.IncrementTag();
-
-			} while (OldHead.GetNode() != nullptr
-				&& (SGD::Thread::H1TaggedPointer<H1AllocPage>)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(FreeHead), (int64)NewHead, (int64)OldHead) != OldHead);
-
-			return OldHead.GetNode();
+			return NewPage;
 		}
 
 		void Deallocate(H1AllocPage* InAllocPage)
 		{
-			SGD::Thread::H1TaggedPointer<H1AllocPage> NewHead;
-			SGD::Thread::H1TaggedPointer<H1AllocPage> OldHead;
-
-			do
-			{
-				OldHead = FreeHead;
-
-				NewHead = OldHead;
-				InAllocPage->SetNext(OldHead.GetNode());
-				NewHead.SetNode(InAllocPage);
-				NewHead.IncrementTag();
-
-			} while ((SGD::Thread::H1TaggedPointer<H1AllocPage>)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(FreeHead), (int64)NewHead, (int64)OldHead) != OldHead);
+			SGD::Thread::LockFreeStack::Push(FreeHead, InAllocPage);
 		}
 
 	protected:
 		// managing page (MT supported)
-		SGD::Thread::H1TaggedPointer<H1AllocPage> FreeHead;
+		SGD::Thread::LockFreeStack::H1LfsHead FreeHead;
 
-	protected:
 		// using memory arena, manage the chunk which gives number of pages
-		class H1AllocChunk
+		class H1AllocChunk : public SGD::Container::SinglelyLinkedList::H1Node
 		{
 		public:
 			static H1AllocChunk* CreateChunk()
@@ -148,9 +108,6 @@ namespace Memory
 
 			int32 GetSize() { return MemoryBlock.Size; }
 			byte* GetStartAddress() { return MemoryBlock.BaseAddress; }
-
-			// next alloc chunk
-			H1AllocChunk* Next;
 
 			// destruction is working as usual
 			~H1AllocChunk()
@@ -162,8 +119,8 @@ namespace Memory
 			friend class H1DefaultAllocPagePolicy;
 
 			H1AllocChunk()
-				: MemoryBlock(H1GlobalSingleton::MemoryArena()->AllocateMemoryBlock())
-				, Next(nullptr)
+				: SGD::Container::SinglelyLinkedList::H1Node()
+				, MemoryBlock(H1GlobalSingleton::MemoryArena()->AllocateMemoryBlock())
 			{
 
 			}		
@@ -177,19 +134,7 @@ namespace Memory
 			H1AllocChunk* NewChunk = H1AllocChunk::CreateChunk();
 
 			// link new chunk in lock-free
-			SGD::Thread::H1TaggedPointer<H1AllocChunk> NewChunkHead;
-			SGD::Thread::H1TaggedPointer<H1AllocChunk> OldChunkHead;
-			
-			do 
-			{
-				OldChunkHead = ChunkHead;
-				NewChunk->Next = OldChunkHead.GetNode()->Next;
-
-				NewChunkHead = OldChunkHead;
-				NewChunkHead.SetNode(NewChunk);
-				NewChunkHead.IncrementTag();
-
-			} while ((SGD::Thread::H1TaggedPointer<H1AllocChunk>)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&ChunkHead, (int64)NewChunkHead, (int64)OldChunkHead) != OldChunkHead);
+			SGD::Thread::LockFreeStack::Push(ChunkHead, NewChunk);
 
 			// generate free pages based on ChunkHead
 			H1AllocChunk* NewHead = NewChunk;
@@ -211,22 +156,11 @@ namespace Memory
 			}
 
 			// link to the free list (in lock-free way)
-			SGD::Thread::H1TaggedPointer<H1AllocPage> NewPageHead;
-			SGD::Thread::H1TaggedPointer<H1AllocPage> OldPageHead;
-
-			do 
-			{
-				OldPageHead = FreeHead;
-				FreePageTail->SetNext(OldPageHead.GetNode());
-
-				NewPageHead = OldPageHead;
-				NewPageHead.SetNode(NewFreePages);
-				NewPageHead.IncrementTag();
-			} while ((SGD::Thread::H1TaggedPointer<H1AllocPage>)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&FreeHead, (int64)NewPageHead, (int64)OldPageHead) != OldPageHead);
+			SGD::Thread::LockFreeStack::Push(FreeHead, NewFreePages, FreePageTail);
 		}
 
 		// managing chunk
-		SGD::Thread::H1TaggedPointer<H1AllocChunk> ChunkHead;
+		SGD::Thread::LockFreeStack::H1LfsHead ChunkHead;
 	};
 
 	// base class for alloc policy

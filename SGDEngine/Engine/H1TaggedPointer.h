@@ -2,15 +2,18 @@
 
 #include "H1Logger.h"
 
+#include "H1SingleLinkedList.h"
+
 namespace SGD
 {
 namespace Thread
 {
-	// lock free stack head (Lfs; Lock-free stack)
-	template <class NodeType>
 	class H1TaggedPointer
 	{
 	public:
+		// tagged pointer only supporting singly linked list node
+		typedef SGD::Container::SinglelyLinkedList::H1Node NodeType;
+
 		H1TaggedPointer()
 			: Data(0)
 		{
@@ -41,8 +44,8 @@ namespace Thread
 		// increment tag count
 		void IncrementTag()
 		{
-			Tag = Tag + 1;
-			h1Check(Tag < (1 << 21), "Tag should be smaller than (1 << 21)!");
+			Layout.Tag = Layout.Tag + 1;
+			h1Check(Layout.Tag < (1 << 21), "Tag should be smaller than (1 << 21)!");
 		}
 
 		bool operator==(const H1TaggedPointer& InTaggedPointer)
