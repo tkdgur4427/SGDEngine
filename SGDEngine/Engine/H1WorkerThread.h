@@ -1,7 +1,6 @@
 #pragma once
 
 #include "H1MemStack.h"
-#include "H1AsyncLogger.h"
 
 namespace SGD
 {
@@ -43,9 +42,6 @@ namespace Thread
 		H1ThreadIdType ThreadId;
 
 		// extra thread-specific data (like TLS)
-
-		// async logger
-		SGD::Log::H1AsyncLogger<char>* Logger;
 
 		// memory stack 
 		SGD::Memory::H1MemStack MemStack;

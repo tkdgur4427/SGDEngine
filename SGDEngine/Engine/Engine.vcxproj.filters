@@ -49,9 +49,6 @@
     <ClInclude Include="H1PlatformThread.h">
       <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="H1AsyncLogger.h">
-      <Filter>Log</Filter>
-    </ClInclude>
     <ClInclude Include="H1Memory.h">
       <Filter>Memory</Filter>
     </ClInclude>

@@ -88,7 +88,15 @@ namespace Log
 			// log count limit
 			// currently we limit the log count as page size
 			LogCountLimit = LogCountPerPage,
+
+			// preventing ABA problem
+			AddressBitNum		= 44,	// in windows system, maximum allowed bits is 44
+			AddressTagBitNum	= 20,
 		};
+
+		// address mask for preventing ABA problem
+		const uint64 AddressTagMask		= (uint64)(~0) << AddressBitNum;
+		const uint64 AddressMask		= (uint64)(~0) >> AddressTagBitNum;
 
 		// real data layout
 		struct LoggerLayout
@@ -128,15 +136,34 @@ namespace Log
 		//	- give temporary log pointer (this should be used as scoped pointer do not store this as member variables)
 		H1Log<CharType>* CreateLog()
 		{
-			H1Log<CharType>* Result = nullptr;
+			if (Layout.Header.FreeHead == nullptr)
+			{
+				// it could happen dumping multiple time, when the logs is out of stock, but it is just happened at that moment
+				// after that, it resolve all problems and just running on normal
+				DumpLogs();
+			}
+
+			H1Log<CharType>* OldHead = nullptr;
 			H1Log<CharType>* NewHead = nullptr;
+			H1Log<CharType>* Result = nullptr;
 
 			// get the result log in lock-free
 			do
 			{
-				Result = Layout.Header.FreeHead;
-				NewHead = Result->Next;
-			} while ((H1Log<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)Result) != Result);
+				OldHead = Layout.Header.FreeHead;
+
+				uint64 Tag = ((uint64)OldHead & AddressTagMask) >> AddressBitNum;
+				Tag++;	// increment tag count
+
+				// extract real data address
+				H1Log<CharType>* Data = (H1Log<CharType>*)((uint64)OldHead & AddressMask);
+				Result = Data;
+
+				NewHead = Data->Next;
+				// add tag count to the new head
+				NewHead = (H1Log<CharType>*)((uint64)NewHead | (Tag << AddressBitNum));
+
+			} while (Layout.Header.FreeHead != nullptr && (H1Log<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)OldHead) != OldHead);
 
 			return Result;
 		}
@@ -144,23 +171,50 @@ namespace Log
 		// dump the log
 		void DumpLogs()
 		{
-			H1Log<CharType>* DumpHead = nullptr;
+			H1Log<CharType>* OldHead = nullptr;
 			H1Log<CharType>* NewHead = nullptr;
+			H1Log<CharType>* Result = nullptr;
 
 			// get the head safely and converting its head to nullptr
 			do
 			{
-				DumpHead = Layout.Header.FreeHead;
-			} while ((H1Log<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)DumpHead) != DumpHead);
+				OldHead = Layout.Header.FreeHead;
+
+				uint64 Tag = ((uint64)OldHead & AddressTagMask) >> AddressBitNum;
+				Tag++;	// increment tag count
+
+				// extract real data address
+				H1Log<CharType>* Data = (H1Log<CharType>*)((uint64)OldHead & AddressMask);
+				Result = Data;
+
+				NewHead = nullptr;
+				// add tag count to the new head
+				NewHead = (H1Log<CharType>*)((uint64)NewHead | (Tag << AddressBitNum));
+
+			} while ((H1Log<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)OldHead) != OldHead);
 
 			// now looping dumping head and print out
-			H1Log<CharType>* CurrLog = DumpHead;
+			H1Log<CharType>* CurrLog = Result;
 			while (CurrLog != nullptr)
 			{
 				// note that appOutputDebugString is safe to MT env.
 				SGD::Platform::Util::appOutputDebugString(CurrLog->Data);
 				CurrLog = CurrLog->Next;
 			}
+
+			// re-attach the nodes to reuse
+			do
+			{
+				OldHead = Layout.Header.FreeHead;
+
+				uint64 Tag = ((uint64)OldHead & AddressTagMask) >> AddressBitNum;
+				Tag++;	// increment tag count
+
+				NewHead = Result;
+				// add tag count to the new head
+				NewHead = (H1Log<CharType>*)((uint64)NewHead | (Tag << AddressBitNum));
+
+			} while ((H1Log<CharType>*)SGD::Thread::appInterlockedCompareExchange64((volatile int64*)&(Layout.Header.FreeHead), (int64)NewHead, (int64)OldHead) != OldHead);
 		}
 	};
 
