@@ -20,6 +20,9 @@ namespace Memory
 	class H1AllocPagePolicy
 	{
 	public:
+		H1AllocPagePolicy() {}
+		virtual ~H1AllocPagePolicy() {}
+
 		// forcing to define its own alloc page for different alloc page policy
 		class H1AllocPage {};
 
@@ -49,6 +52,11 @@ namespace Memory
 
 		}
 
+		virtual ~H1DefaultAllocPagePolicy()
+		{
+			DestroyAllChunks();
+		}
+
 		// H1AllocPage definition
 		class H1AllocPage : public SGD::Container::SinglelyLinkedList::H1Node
 		{
@@ -61,6 +69,7 @@ namespace Memory
 			};			
 
 			H1AllocPage() {}
+			virtual ~H1AllocPage() {}
 
 			// public methods
 			H1AllocPage* GetNext() { return Next; }
@@ -110,7 +119,7 @@ namespace Memory
 			byte* GetStartAddress() { return MemoryBlock.BaseAddress; }
 
 			// destruction is working as usual
-			~H1AllocChunk()
+			virtual ~H1AllocChunk()
 			{
 				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlock(MemoryBlock);
 			}
@@ -157,6 +166,18 @@ namespace Memory
 
 			// link to the free list (in lock-free way)
 			SGD::Thread::LockFreeStack::Push(FreeHead, NewFreePages, FreePageTail);
+		}
+
+		void DestroyAllChunks()
+		{
+			// this method should be called in synchronized env.
+			H1AllocChunk* CurrChunk = (H1AllocChunk*)ChunkHead.GetNode();
+			while (CurrChunk != nullptr)
+			{
+				H1AllocChunk* ChunkToRemove = CurrChunk;
+				CurrChunk = (H1AllocChunk*)CurrChunk->Next;
+				delete ChunkToRemove;
+			}
 		}
 
 		// managing chunk
