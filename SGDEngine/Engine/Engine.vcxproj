@@ -122,11 +122,13 @@
     <ClInclude Include="H1Allocator.h" />
     <ClInclude Include="H1AllocPolicy.h" />
     <ClInclude Include="H1BlockAllocPolicy.h" />
+    <ClInclude Include="H1BuddyAllocPolicy.h" />
     <ClInclude Include="H1CompileTimeAssert.h" />
     <ClInclude Include="H1CriticalSection.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
     <ClInclude Include="H1LaunchEngineLoop.h" />
+    <ClInclude Include="H1LinearAllocPolicy.h" />
     <ClInclude Include="H1LockFreeStackImpl.h" />
     <ClInclude Include="H1SingleLinkedList.h" />
     <ClInclude Include="H1TaggedPointer.h" />

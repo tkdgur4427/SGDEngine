@@ -184,6 +184,71 @@ namespace Memory
 		SGD::Thread::LockFreeStack::H1LfsHead ChunkHead;
 	};
 
+	/*
+		- default only one large page alloc support
+		- only allowed to allocate once! (user-specified size)
+	*/
+	class H1DefaultAllocOneLargePagePolicy : public H1AllocPagePolicy
+	{
+	public:
+		enum
+		{
+			// to allocate large one memory page, calculate required block count for MemoryArena
+			MEM_BLOCK_SIZE = 2 * 1024 * 1024,
+		};
+
+		H1DefaultAllocOneLargePagePolicy(uint64 InSize)
+			: H1AllocPagePolicy()
+			, Size(InSize)
+		{
+
+		}
+
+		virtual ~H1DefaultAllocOneLargePagePolicy()
+		{
+
+		}
+
+		class H1AllocPage
+		{
+		public:
+			H1AllocPage(uint64 InSize)
+				: LargeMemBlock(H1GlobalSingleton::MemoryArena()->AllocateMemoryBlocks((InSize + (MEM_BLOCK_SIZE - 1)) / MEM_BLOCK_SIZE))
+			{
+
+			}
+
+			~H1AllocPage()
+			{
+				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlocks(LargeMemBlock);
+			}
+
+		protected:
+			SGD::Memory::H1MemoryBlockRange LargeMemBlock;
+		};
+
+		H1AllocPage* Allocate()
+		{
+			SGD::Thread::H1ScopeLock Lock(&SyncObject);
+
+			h1Check(LargeAllocPage != nullptr, "already large memory page is allocated!");
+			LargeAllocPage =  SGD::make_unique<H1AllocPage>(Size);
+			return LargeAllocPage.get();
+		}
+
+		void Deallocate(H1AllocPage* InAllocPage)
+		{
+			h1Check(false, "deallocate method is not supported!");
+		}
+
+	protected:
+		// only one large page is supported, so do the lock
+		SGD::Thread::H1CriticalSection SyncObject;
+
+		SGD::unqiue_ptr<H1AllocPage> LargeAllocPage;
+		uint64 Size;
+	};
+
 	// base class for alloc policy
 	template <class AllocPagePolicyType = H1DefaultAllocPagePolicy>
 	class H1AllocPolicy 

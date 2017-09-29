@@ -36,6 +36,20 @@ namespace Util
 		{
 			return (T)(((int64)Pointer + Alignment - 1) & ~(Alignment - 1));
 		}
+
+		constexpr inline uint64 PowerOfTwo(uint64 InValue)
+		{
+			uint64 CountToShift = 0;
+			uint64 Result = 1;
+
+			while (InValue < Result)
+			{
+				CountToShift++;
+				Result = (uint64)1 << CountToShift;
+			}
+
+			return Result;
+		}
 }
 }
 }

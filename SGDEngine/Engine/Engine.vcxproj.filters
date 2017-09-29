@@ -34,6 +34,9 @@
     <Filter Include="Containers">
       <UniqueIdentifier>{a5e15e68-dfe8-4dc9-b236-410fc8852cca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Job">
+      <UniqueIdentifier>{0a264c09-8aed-4dc8-a8e7-ad048750ef26}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H1PlatformUtil.h">
@@ -89,6 +92,12 @@
     </ClInclude>
     <ClInclude Include="H1LockFreeStackImpl.h">
       <Filter>Thread</Filter>
+    </ClInclude>
+    <ClInclude Include="H1LinearAllocPolicy.h">
+      <Filter>Memory\Allocator\AllocPolicy</Filter>
+    </ClInclude>
+    <ClInclude Include="H1BuddyAllocPolicy.h">
+      <Filter>Memory\Allocator\AllocPolicy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
