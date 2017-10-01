@@ -231,6 +231,53 @@ namespace Memory
 			return H1BuddyAllocLookupTables::GetSingleton()->GetLevelIndexToBlockSize(BaseLevelIndexForLookupTable, InSize);
 		}
 
+		bool DivideBuddyBlocks(uint64 InLevelIndex, uint64 InBlockIndex)
+		{
+			// first find the free block on higher level
+			uint64 EndLevelIndex = InLevelIndex;
+
+			uint64 CurrLevelIndex = InLevelIndex;
+			uint64 StartBlockIndexForCurrLevel = GetBlockIndexFromLevelIndex(BaseLevelIndexForLookupTable, StartLevelIndex);
+			uint64 OffsetBlockIndexForCurrLevel = InBlockIndex - StartBlockIndexForCurrLevel;
+
+			uint64 StartLevelIndex = 0;
+			while (OffsetBlockIndexForCurrLevel > 0)
+			{
+				StartBlockIndexForCurrLevel = GetBlockIndexFromLevelIndex(BaseLevelIndexForLookupTable, CurrLevelIndex);
+
+				uint64 BlockIndex = StartBlockIndexForCurrLevel + OffsetBlockIndexForCurrLevel;
+				uint64 ChunkIndex = BlockIndex / H1BuddyChunk::BlockNum;
+				uint64 SubIndex = BlockIndex % H1BuddyChunk::BlockNum;
+
+				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Freed)
+				{
+					// when it founds the fee block, set the start level and index and out of the loop
+					StartLevelIndex = CurrLevelIndex;
+					break;
+				}
+
+				// update the level index and offset block index
+				CurrLevelIndex--;
+				OffsetBlockIndexForCurrLevel >>= 1;
+			}
+
+			if (StartLevelIndex == 0)
+			{
+				// failed to find the proper buddy block which means failed to allocate
+				return false;
+			}
+
+			// second start to divide the block
+			uint64 CurrBlockIndexOffset = OffsetBlockIndexForCurrLevel;
+
+			for (uint64 LevelIndex = StartLevelIndex; LevelIndex < EndLevelIndex; ++LevelIndex)
+			{
+				uint64 StartBlockIndex = GetBlockIndexFromLevelIndex(BaseLevelIndexForLookupTable, LevelIndex);
+			}
+
+			return true;
+		}
+
 		uint64 AllocateBuddyBlock(uint64 InSize)
 		{
 			// first calculate buddy block size
@@ -245,8 +292,43 @@ namespace Memory
 
 			for (uint64 BlockIndex = StartBlockIndex; BlockIndex < EndBlockIndex; ++BlockIndex)
 			{
-				if 
+				uint64 ChunkIndex = BlockIndex / H1BuddyChunk::BlockNum;
+				uint64 SubIndex = BlockIndex % H1BuddyChunk::BlockNum;
+
+				// if current buddy block is all allocated, skip the chunk (blocks)
+				if (BuddyChunks[ChunkIndex].IsAllAllocated())
+				{
+					BlockIndex += (H1BuddyChunk::BlockNum - SubIndex);
+					continue;
+				}
+
+				// if the block is allocated skip it
+				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Allocated)
+				{
+					continue;
+				}
+
+				// if block is free, give the current block index;
+				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Freed)
+				{
+					h1Check(SubIndex % 2 == 1, "in buddy allocator, block_freed flag should be in odd index");
+
+					// change the block state and return the block index
+					BuddyChunks[ChunkIndex].BlockStates[SubIndex] = EBlockState::BlockState_Allocated;
+					return BlockIndex;
+				}
+
+				else
+				{
+					h1Check(SubIndex % 2 == 0, "in buddy allocator, 0xFF (not set flag) should be in even index");
+					h1Check(BuddyChunks[ChunkIndex].BlockStates[SubIndex] == 0xFF, "its block state should be not set!");
+
+
+				}
 			}
+
+			// not available buddy block exists! ; failed to allocate the block
+			return -1;
 		}
 
 		void DeallocateBuddyBlock(uint64 InOffset)
