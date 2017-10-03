@@ -40,30 +40,31 @@ namespace Memory
 	};
 
 	// for buddy alloc policy to fast look-up table to reduce the computation time complexity
+	template <uint64 MaxSize, uint64 MinSize, uint64 MaxLevel>
 	class H1BuddyAllocLookupTables
 	{
 	public:
-		const H1BuddyAllocLookupTables* GetSingleton()
+		H1BuddyAllocLookupTables()
 		{
-			static H1BuddyAllocLookupTables Instance;
-			return &Instance;
+			// compute tables
+			ComputeLevelIndexToBlockIndexTable();
 		}
 
-		uint64 GetLevelIndexToBlockIndex(uint64 InBaseLevelIndex, uint64 InLevelIndex)
+		uint64 GetLevelIndexToBlockIndex(uint64 InLevelIndex)
 		{
-			return LevelIndexToBlockIndex[InBaseLevelIndex + InLevelIndex];
+			return LevelIndexToBlockIndex[InLevelIndex];
 		}
 
-		uint64 GetLevelIndexToBlockSize(uint64 InBaseLevelIndex, uint64 InLevelIndex)
+		uint64 GetLevelIndexToBlockSize(uint64 InLevelIndex)
 		{
-			return LevelIndexToBlockSize[InBaseLevelIndex + InLevelIndex];
+			return LevelIndexToBlockSize[InLevelIndex];
 		}
 
 		// note that even though it is binary search, if the level num is big, it also inefficient
 		// (but we can't make the lookup table for block which is too wasteful in memory space)
-		uint64 GetBlockIndexToLevelIndex(uint64 InBaseLevelIndex, uint64 InBlockIndex)
+		uint64 GetBlockIndexToLevelIndex(uint64 InBlockIndex)
 		{
-			for (uint64 LevelIndex = InBaseLevelIndex; LevelIndex < LevelNum - 1; ++LevelIndex)
+			for (uint64 LevelIndex = 0; LevelIndex < LevelNum - 1; ++LevelIndex)
 			{
 				if (LevelIndexToBlockIndex[LevelIndex + 1] > InBlockIndex)
 				{
@@ -75,9 +76,9 @@ namespace Memory
 			return LevelNum - 1;
 		}
 
-		uint64 GetBlockSizeToLevelIndex(uint64 InBaseLevelIndex, uint64 InBlockSize)
+		uint64 GetBlockSizeToLevelIndex(uint64 InBlockSize)
 		{
-			for (uint64 LevelIndex = InBaseLevelIndex; LevelIndex < LevelNum - 1; ++LevelIndex)
+			for (uint64 LevelIndex = 0; LevelIndex < LevelNum - 1; ++LevelIndex)
 			{
 				if (LevelIndexToBlockSize[LevelIndex + 1] > InBlockSize)
 				{
@@ -90,19 +91,6 @@ namespace Memory
 		}
 
 	protected:
-		const uint64 MaxSize = 8 * 1024 * 1024 * 1024, // 8 GB
-
-		enum 
-		{
-			MinSize		= 16,	// minimum size is same as minimum alignment 16
-			MaxLevel	= 128,	
-		};
-
-		H1BuddyAllocLookupTables()
-		{
-			ComputeLevelIndexToBlockIndexTable();
-		}
-
 		void ComputeLevelIndexToBlockIndexTable()
 		{
 			// first calculate the level num
@@ -133,6 +121,7 @@ namespace Memory
 		int64 LevelIndexToBlockIndex[MaxLevel];
 		int64 LevelIndexToBlockSize[MaxLevel];
 
+		// the calculated total level count
 		int64 LevelNum;
 	};
 
@@ -211,12 +200,12 @@ namespace Memory
 
 		uint64 GetBlockIndexFromLevelIndex(uint64 InLevelIndex)
 		{
-			return H1BuddyAllocLookupTables::GetSingleton()->GetBlockIndexToLevelIndex(BaseLevelIndexForLookupTable, InLevelIndex);
+			return LookupTable.GetBlockIndexToLevelIndex(InLevelIndex);
 		}
 
 		uint64 GetLevelIndexFromBlockIndex(uint64 InBlockIndex)
 		{
-			return H1BuddyAllocLookupTables::GetSingleton()->GetLevelIndexToBlockIndex(BaseLevelIndexForLookupTable, InBlockIndex);
+			return LookupTable.GetLevelIndexToBlockIndex(InBlockIndex);
 		}
 
 		uint64 GetBuddyBlockSize(uint64 InSize)
@@ -226,9 +215,8 @@ namespace Memory
 
 		uint64 GetLevelIndexFromSize(uint64 InSize)
 		{
-			h1Check(InSize == SGD::Platform::Util::PowerOfTwo(InSize), "the size should be power of two!");
-
-			return H1BuddyAllocLookupTables::GetSingleton()->GetLevelIndexToBlockSize(BaseLevelIndexForLookupTable, InSize);
+			h1Check(InSize == SGD::Platform::Util::PowerOfTwo(InSize), "the size should be power of two!");s
+			return LookupTable.GetLevelIndexToBlockSize(InSize);
 		}
 
 		bool DivideBuddyBlocks(uint64 InLevelIndex, uint64 InBlockIndex)
@@ -339,8 +327,8 @@ namespace Memory
 		// array of buddy chunks
 		H1BuddyChunk BuddyChunks[ChunkNum];
 
-		// base level index to use look up table
-		uint64 BaseLevelIndexForLookupTable;
+		// look up table
+		H1BuddyAllocLookupTables<TotalSize, LeafBlockSize, 128> LookupTable;
 
 	private:
 		void Initialize()
