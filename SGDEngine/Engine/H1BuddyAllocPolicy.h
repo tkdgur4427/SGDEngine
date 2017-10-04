@@ -146,6 +146,10 @@ namespace Memory
 
 		void* Allocate(uint64 InSize)
 		{
+#if !FINAL_RELEASE
+			h1Check(IsRunInSameThead(), "it tries to allocate in other thread please check!");
+#endif
+
 			uint64 AddressOffset = AllocateBuddyBlock(InSize);			
 			byte* Address = MemoryPage->GetData();
 			return Address + AddressOffset;
@@ -153,6 +157,10 @@ namespace Memory
 
 		void Deallocate(void* InPointer)
 		{
+#if !FINAL_RELEASE
+			h1Check(IsRunInSameThead(), "it tries to deallocate in other thread please check!");
+#endif
+
 			uint64 AddressOffset = (byte*)InPointer - MemoryPage->GetData();
 			DeallocateBuddyBlock(AddressOffset);
 		}
