@@ -133,7 +133,7 @@ namespace Memory
 			: PagePolicy(BuddyAllocParams::TotalSize)
 		{
 			// allocate one large memory page
-			PagePolicy.Allocate();
+			MemoryPage = PagePolicy.Allocate();
 
 			// initialize
 			Initialize();
@@ -146,17 +146,22 @@ namespace Memory
 
 		void* Allocate(uint64 InSize)
 		{
-			return nullptr;
+			uint64 AddressOffset = AllocateBuddyBlock(InSize);			
+			byte* Address = MemoryPage->GetData();
+			return Address + AddressOffset;
 		}
 
 		void Deallocate(void* InPointer)
 		{
-			
+			uint64 AddressOffset = (byte*)InPointer - MemoryPage->GetData();
+			DeallocateBuddyBlock(AddressOffset);
 		}
 
 	protected:
 		// one large page allocation policy
 		AllocPagePolicy PagePolicy;
+		// direct access the only page from page policy
+		AllocPage* MemoryPage;
 
 		// for each buddy block, it has its own state 
 		enum EBlockState
@@ -326,8 +331,9 @@ namespace Memory
 					continue;
 				}
 
-				// if the block is allocated skip it
-				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Allocated)
+				// if the block is allocated or divided, skip it (no available block exists to allocate)
+				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Allocated
+					|| BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Divided)
 				{
 					continue;
 				}
@@ -348,7 +354,9 @@ namespace Memory
 					h1Check(BuddyChunks[ChunkIndex].BlockStates[SubIndex] == 0xFF, "its block state should be not set!");
 
 					// divide the bock
-					DivideBuddyBlocks(LevelIndex, BlockIndex);
+					bool Result = DivideBuddyBlocks(LevelIndex, BlockIndex);
+					h1Check(Result == true, "it is failed to allocate, please check!");
+
 					return BlockIndex;
 				}
 			}
@@ -357,14 +365,96 @@ namespace Memory
 			return -1;
 		}
 
-		void MergeBuddyBlocks()
+		uint64 FindLevelFromOffsetToMerge(uint64 InOffset)
 		{
+			uint64 Result = -1;	// if the result == -1, it means no need to merge buddy blocks
+			uint64 EndLevelIndex = LevelNum;
 
+			for (uint64 LevelIndex = EndLevelIndex; LevelIndex >= 0; --LevelIndex, BlockOffset >>= 1)
+			{
+				uint64 BlockSize = LookupTable.GetLevelIndexToBlockSize(EndLevelIndex);
+				h1Check(InOffset % BlockSize == 0, "the offset should be aligned to block size!");
+
+				uint64 BlockOffset = InOffset / BlockSize;
+				uint64 StartBlockIndex = LookupTable.GetLevelIndexToBlockIndex(LevelIndex);				
+				uint64 BlockIndex = StartBlockIndex + BlockOffset;
+
+				uint64 ChunkIndex = BlockIndex / H1BuddyChunk::BlockNum;
+				uint64 SubIndex = BlockIndex % H1BuddyChunk::BlockNum;
+				
+				// successfully found allocated block!
+				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Allocated)
+				{
+					// handling the current block state and neighbor block state
+					uint64 NeightborIndex = SubIndex % 2 == 0 ? SubIndex + 1 : SubIndex - 1;
+					if (BuddyChunks[ChunkIndex].BlockStates[NeightborIndex] == EBlockState::BlockState_Allocated
+						|| BuddyChunks[ChunkIndex].BlockStates[NeightborIndex] == EBlockState::BlockState_Divided)
+					{
+						BuddyChunks[ChunkIndex].BlockStates[SubIndex] = EBlockState::BlockState_Freed;
+					}
+					else
+					{
+						// ready to merge further
+						BuddyChunks[ChunkIndex].BlockStates[SubIndex] = 0xFF;
+						BuddyChunks[ChunkIndex].BlockStates[NeightborIndex] = 0xFF;
+
+						// you should merge further!
+						Result = LevelIndex;
+					}
+
+					// successfully find the allocated block
+					break;
+				}
+			}
+
+			return Result;
+		}
+
+		void MergeBuddyBlocks(uint64 InLevelIndex, uint64 InOffset)
+		{
+			uint64 StartLevelIndex = InLevelIndex;
+			
+			// NOTE
+			// - no need to merge the highest level 0 because it should maintain its state as 'freed'
+			for (uint64 LevelIndex = StartLevelIndex; LevelIndex > 0; --LevelIndex)
+			{
+				uint64 BlockSize = LookupTable.GetLevelIndexToBlockSize(LevelIndex);
+				uint64 BlockOffset = InOffset / BlockSize;
+
+				uint64 StartBlockIndex = LookupTable.GetLevelIndexToBlockIndex(LevelIndex);
+				uint64 BlockIndex = StartBlockIndex + BlockOffset;
+
+				uint64 ChunkIndex = BlockIndex / H1BuddyChunk::BlockNum;
+				uint64 SubIndex = BlockIndex % H1BuddyChunk::BlockNum;
+				h1Check(BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Divided, "the block to merge should be in the state as divided!");
+				
+				uint64 NeightborIndex = SubIndex % 2 == 0 ? SubIndex + 1 : SubIndex - 1;
+				if (BuddyChunks[ChunkIndex].BlockStates[NeightborIndex] == EBlockState::BlockState_Allocated
+					|| BuddyChunks[ChunkIndex].BlockStates[NeightborIndex] == EBlockState::BlockState_Divided)
+				{
+					// if the neighbor block state is allocated, no need to further merge the block
+					BuddyChunks[ChunkIndex].BlockStates[SubIndex] = EBlockState::BlockState_Freed;
+					break;
+				}
+				else
+				{
+					// ready to merge further
+					BuddyChunks[ChunkIndex].BlockStates[SubIndex] = 0xFF;
+					BuddyChunks[ChunkIndex].BlockStates[NeightborIndex] = 0xFF;
+				}
+			}
 		}
 
 		void DeallocateBuddyBlock(uint64 InOffset)
 		{
-
+			// first find the lowest level
+			uint64 LevelIndexStartToMerge = FindLevelFromOffsetToMerge(InOffset);
+ 
+			if (LevelIndexStartToMerge != -1)
+			{
+				// now, if necessary need to merge the block as buddy allocator paradigm
+				MergeBuddyBlocks(LevelIndexStartToMerge, InOffset);
+			}
 		}
 
 		// array of buddy chunks

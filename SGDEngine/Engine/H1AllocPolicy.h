@@ -24,7 +24,12 @@ namespace Memory
 		virtual ~H1AllocPagePolicy() {}
 
 		// forcing to define its own alloc page for different alloc page policy
-		class H1AllocPage {};
+		class H1AllocPage 
+		{
+		public:
+			int64 GetSize() { return -1; }
+			byte* GetData() { return nullptr; }
+		};
 
 		H1AllocPage* Allocate()
 		{
@@ -75,7 +80,7 @@ namespace Memory
 			H1AllocPage* GetNext() { return Next; }
 			void SetNext(H1AllocPage* InNext) { Next = InNext; }
 
-			int32 GetSize() { return DataSize; }
+			int64 GetSize() { return (int64)DataSize; }
 			byte* GetData() { return (byte*)this + HeaderSize; }
 
 		protected:
@@ -222,6 +227,9 @@ namespace Memory
 			{
 				H1GlobalSingleton::MemoryArena()->DeallocateMemoryBlocks(LargeMemBlock);
 			}
+
+			int64 GetSize() { return LargeMemBlock.Size; }
+			byte* GetData() { return LargeMemBlock.BaseAddress; }
 
 		protected:
 			SGD::Memory::H1MemoryBlockRange LargeMemBlock;
