@@ -225,13 +225,13 @@ namespace Memory
 			uint64 EndLevelIndex = InLevelIndex;
 
 			uint64 CurrLevelIndex = InLevelIndex;
-			uint64 StartBlockIndexForCurrLevel = GetBlockIndexFromLevelIndex(BaseLevelIndexForLookupTable, StartLevelIndex);
+			uint64 StartBlockIndexForCurrLevel = GetBlockIndexFromLevelIndex(StartLevelIndex);
 			uint64 OffsetBlockIndexForCurrLevel = InBlockIndex - StartBlockIndexForCurrLevel;
 
 			uint64 StartLevelIndex = 0;
 			while (OffsetBlockIndexForCurrLevel > 0)
 			{
-				StartBlockIndexForCurrLevel = GetBlockIndexFromLevelIndex(BaseLevelIndexForLookupTable, CurrLevelIndex);
+				StartBlockIndexForCurrLevel = GetBlockIndexFromLevelIndex(CurrLevelIndex);
 
 				uint64 BlockIndex = StartBlockIndexForCurrLevel + OffsetBlockIndexForCurrLevel;
 				uint64 ChunkIndex = BlockIndex / H1BuddyChunk::BlockNum;
@@ -239,8 +239,15 @@ namespace Memory
 
 				if (BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Freed)
 				{
-					// when it founds the fee block, set the start level and index and out of the loop
+					// when it founds the free block, set the start level and index and out of the loop
+					CurrLevelIndex++;
+					OffsetBlockIndexForCurrLevel <<= 1;
+
 					StartLevelIndex = CurrLevelIndex;
+
+					// set the block state as divided
+					BuddyChunks[ChunkIndex].BlockStates[SubIndex] = EBlockState::BlockState_Divided;
+
 					break;
 				}
 
@@ -260,8 +267,37 @@ namespace Memory
 
 			for (uint64 LevelIndex = StartLevelIndex; LevelIndex < EndLevelIndex; ++LevelIndex)
 			{
-				uint64 StartBlockIndex = GetBlockIndexFromLevelIndex(BaseLevelIndexForLookupTable, LevelIndex);
+				// change the state of current level
+				uint64 StartBlockIndex = GetBlockIndexFromLevelIndex(LevelIndex);
+				uint64 CurrBlockIndex = StartBlockIndex + CurrBlockIndexOffset;
+
+				uint64 ChunkIndex = CurrBlockIndex / 8;
+				uint64 SubIndex = CurrBlockIndex % 8;
+
+				// set the block state as divided
+				h1Check(BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Freed, "the block state before dividing, it should be free state!");
+				BuddyChunks[ChunkIndex].BlockStates[SubIndex] = EBlockState::BlockState_Divided;
+				BuddyChunks[ChunkIndex].BlockStates[SubIndex + 1] = EBlockState::BlockState_Freed;
+
+				// update block index offset
+				CurrBlockIndexOffset <<= 1;
 			}
+
+			// when it reaches to the end of level, handle it separately
+			h1Check(CurrBlockIndexOffset == OffsetBlockIndexForCurrLevel, "it should be same!");
+
+			// change the state of current level
+			uint64 StartBlockIndex = GetBlockIndexFromLevelIndex(EndLevelIndex);
+			uint64 CurrBlockIndex = StartBlockIndex + CurrBlockIndexOffset;
+			h1Checkf(CurrBlockIndex == InBlockIndex);
+
+			uint64 ChunkIndex = CurrBlockIndex / 8;
+			uint64 SubIndex = CurrBlockIndex % 8;
+
+			// set the block state as divided
+			h1Check(BuddyChunks[ChunkIndex].BlockStates[SubIndex] == EBlockState::BlockState_Divided, "at the end of level, it should be divided");
+			BuddyChunks[ChunkIndex].BlockStates[SubIndex] = EBlockState::BlockState_Allocated;
+			BuddyChunks[ChunkIndex].BlockStates[SubIndex + 1] = EBlockState::BlockState_Freed;
 
 			return true;
 		}
@@ -311,12 +347,19 @@ namespace Memory
 					h1Check(SubIndex % 2 == 0, "in buddy allocator, 0xFF (not set flag) should be in even index");
 					h1Check(BuddyChunks[ChunkIndex].BlockStates[SubIndex] == 0xFF, "its block state should be not set!");
 
-
+					// divide the bock
+					DivideBuddyBlocks(LevelIndex, BlockIndex);
+					return BlockIndex;
 				}
 			}
 
 			// not available buddy block exists! ; failed to allocate the block
 			return -1;
+		}
+
+		void MergeBuddyBlocks()
+		{
+
 		}
 
 		void DeallocateBuddyBlock(uint64 InOffset)
@@ -335,9 +378,6 @@ namespace Memory
 		{
 			// set the first buddy block (level0) as free
 			BuddyChunks[0].BlockStates[0] = EBlockState::BlockState_Freed;
-
-			// calculate the base level index for lookup table
-			BaseLevelIndexForLookupTable = H1BuddyAllocLookupTables::GetSingleton()->GetBlockSizeToLevelIndex(0, BuddyAllocParams::TotalSize);
 		}
 
 		// const expression methods
