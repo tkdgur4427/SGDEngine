@@ -16,7 +16,7 @@ namespace Memory
 			// total size of the buffer for buddy allocator
 			TotalSize = SGD::Platform::Util::PowerOfTwo(Size),
 			// leaf node size of block (it should be aligned as well as power of two)
-			LeafBlockSize = SGD::Platform::Util::PowerOfTwo(SGD::PlatformLeafSize::Util::Align(LeafSize, Alignment)),
+			LeafBlockSize = SGD::Platform::Util::PowerOfTwo(SGD::Platform::Util::Align(LeafSize, Alignment)),
 		};
 
 		H1BuddyAllocParams()
