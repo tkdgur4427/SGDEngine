@@ -18,6 +18,8 @@ void Init()
 
 void Run()
 {
+	SGD::Container::H1Array<int> Array;
+
 	// scope marking memory stack in GMainThreadContext
 	SGD::Memory::H1MemMark MainThreadRunMark(GMainThreadContext.MemStack);
 
