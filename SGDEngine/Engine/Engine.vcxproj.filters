@@ -99,6 +99,18 @@
     <ClInclude Include="H1BuddyAllocPolicy.h">
       <Filter>Memory\Allocator\AllocPolicy</Filter>
     </ClInclude>
+    <ClInclude Include="H1StdAllocator.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="H1StlContainers.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="H1JobScheduler.h">
+      <Filter>Job</Filter>
+    </ClInclude>
+    <ClInclude Include="H1Job.h">
+      <Filter>Job</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
