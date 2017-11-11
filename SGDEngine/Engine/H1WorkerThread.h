@@ -22,7 +22,7 @@ namespace Thread
 	};
 
 	// for user thread type (fiber-based worker thread)
-	class H1WorkerUserThread_Imp
+	class H1WorkerThread_FiberImp : public H1WorkerThread_Impl
 	{		
 	public:
 		virtual uint32 Run(void* Data);
@@ -46,8 +46,8 @@ namespace Thread
 		// memory stack 
 		SGD::Memory::H1MemStack MemStack;
 
-		// allocator (thread-local)
-
+		// buddy allocator (thread-local)
+		
 	};	
 
 	// worker thread tuple

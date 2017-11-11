@@ -12,9 +12,6 @@ void Init()
 	GMainThreadContext.ThreadId = SGD::Thread::appGetCurrentThreadId();
 	GMainThreadContext.ThreadHandle = nullptr; // indicating main thread
 
-	// register thread-local logger
-
-
 	// setting GWorkerThreadContext as main thread
 	GWorkerThreadContext = &GMainThreadContext;
 }

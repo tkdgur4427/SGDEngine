@@ -127,9 +127,10 @@
     <ClInclude Include="H1CriticalSection.h" />
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1GlobalSingleton.h" />
+    <ClInclude Include="H1JobManager.h" />
     <ClInclude Include="H1LaunchEngineLoop.h" />
-    <ClInclude Include="H1LinearAllocPolicy.h" />
     <ClInclude Include="H1LockFreeStackImpl.h" />
+    <ClInclude Include="H1ObjectAllocator.h" />
     <ClInclude Include="H1SingleLinkedList.h" />
     <ClInclude Include="H1TaggedPointer.h" />
     <ClInclude Include="H1Logger.h" />
@@ -140,6 +141,7 @@
     <ClInclude Include="H1PlatformUtil.h" />
     <ClInclude Include="H1PlatformThread.h" />
     <ClInclude Include="H1RingBuffer.h" />
+    <ClInclude Include="H1ThreadLocalAllocator.h" />
     <ClInclude Include="H1WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>

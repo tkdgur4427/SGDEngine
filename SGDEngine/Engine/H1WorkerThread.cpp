@@ -6,12 +6,12 @@ thread_local SGD::Thread::H1WorkerThread_Context* GWorkerThreadContext = nullptr
 
 using namespace SGD::Thread;
 
-bool H1WorkerUserThread_Imp::Initialize(H1WorkerThread_Context* Context)
+bool H1WorkerThread_FiberImp::Initialize(H1WorkerThread_Context* Context)
 {
 	return true;
 }
 
-uint32 H1WorkerUserThread_Imp::Run(void* Data)
+uint32 H1WorkerThread_FiberImp::Run(void* Data)
 {
 	H1WorkerThread_Context* Context = (H1WorkerThread_Context*)Data;
 	

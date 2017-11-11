@@ -10,9 +10,6 @@
     <Filter Include="Assert">
       <UniqueIdentifier>{27795808-9df2-4be0-bf9e-49d11fdfa509}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Memory\MemoryArena">
-      <UniqueIdentifier>{9dd78bc8-9ac8-4b89-a1e2-59fff938511b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Thread">
       <UniqueIdentifier>{54af76e6-f0d0-4e4f-9bdb-54256b0c5a95}</UniqueIdentifier>
     </Filter>
@@ -37,13 +34,16 @@
     <Filter Include="Job">
       <UniqueIdentifier>{0a264c09-8aed-4dc8-a8e7-ad048750ef26}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Memory\Memory Arena">
+      <UniqueIdentifier>{9dd78bc8-9ac8-4b89-a1e2-59fff938511b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="H1PlatformUtil.h">
       <Filter>Util</Filter>
     </ClInclude>
     <ClInclude Include="H1MemoryArena.h">
-      <Filter>Memory\MemoryArena</Filter>
+      <Filter>Memory\Memory Arena</Filter>
     </ClInclude>
     <ClInclude Include="H1EnginePrivate.h" />
     <ClInclude Include="H1WorkerThread.h">
@@ -93,19 +93,18 @@
     <ClInclude Include="H1LockFreeStackImpl.h">
       <Filter>Thread</Filter>
     </ClInclude>
-    <ClInclude Include="H1LinearAllocPolicy.h">
-      <Filter>Memory\Allocator\AllocPolicy</Filter>
-    </ClInclude>
     <ClInclude Include="H1BuddyAllocPolicy.h">
       <Filter>Memory\Allocator\AllocPolicy</Filter>
     </ClInclude>
+    <ClInclude Include="H1JobManager.h" />
+    <ClInclude Include="H1ThreadLocalAllocator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="H1PlatformUtilWin32.cpp">
       <Filter>Util</Filter>
     </ClCompile>
     <ClCompile Include="H1MemoryArena.cpp">
-      <Filter>Memory\MemoryArena</Filter>
+      <Filter>Memory\Memory Arena</Filter>
     </ClCompile>
     <ClCompile Include="H1EnginePrivate.cpp" />
     <ClCompile Include="H1PlatformThreadWin32.cpp">
