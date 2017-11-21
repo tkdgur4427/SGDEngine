@@ -21,32 +21,39 @@ namespace Job
 		DataType Data;
 	};
 
+	// sync object
+	class H1JobSyncCounter
+	{
+	public:
+		// counter representing ref-count who refer to this job
+		SGD::atomic<uint32> JobCounter;
+	};
+
 	// job (task) instance
 	template <class JobTemplateType>
 	class H1Job
 	{
 	public:
-		H1Job(typename JobTemplateType* Template)
+		H1Job(typename JobTemplateType* Template, H1JobSyncCounter* InSyncCounter)
 			: JobTemplate(Template)
+			, SyncCounter(InSyncCounter)
 		{
 
 		}
 
 		void Execute()
 		{
+			// sync counter should be zero!
+			h1Check(SyncCounter != nullptr);
+			h1Check(SyncCounter.JobCounter == 0);
+
 			JobTemplate->Execute();
 		}
 
 	protected:
 		// it holds the job template
 		JobTemplateType* JobTemplate;
-	};
-
-	// sync object
-	class H1JobSyncCounter
-	{
-	public:
-		SGD::atomic<uint32> JobCounter;
+		H1JobSyncCounter* SyncCounter;
 	};
 }
 }

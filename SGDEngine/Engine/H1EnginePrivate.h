@@ -15,6 +15,9 @@
 // static assert (compile-time)
 #include "H1CompileTimeAssert.h"
 
+// logger
+#include "H1Logger.h"
+
 // platform utilities
 #include "H1PlatformUtil.h"
 

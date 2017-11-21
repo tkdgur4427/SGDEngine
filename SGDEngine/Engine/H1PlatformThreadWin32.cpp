@@ -63,3 +63,38 @@ int64 SGD::Thread::appInterlockedCompareExchange64(volatile int64* Dest, int64 E
 {
 	return InterlockedCompareExchange64(Dest, Exchange, Comperand);
 }
+
+H1FiberHandleType* SGD::Thread::appCreateFiber(int32 InStackSize, H1FiberEntryPoint InFiberEntryPoint, byte* InData)
+{
+	return (H1FiberHandleType*)CreateFiber(InStackSize, InFiberEntryPoint, InData);
+}
+
+void SGD::Thread::appDeleteFiber(H1FiberHandleType* InFiberObject)
+{
+	return DeleteFiber(InFiberObject);
+}
+
+H1FiberHandleType* SGD::Thread::appConvertThreadToFiber(byte* InDataToFiber)
+{
+	return (H1FiberHandleType*)ConvertThreadToFiberEx(InDataToFiber, FIBER_FLAG_FLOAT_SWITCH);
+}
+
+bool SGD::Thread::appConvertFiberToThread()
+{
+	return ConvertFiberToThread();
+}
+
+void SGD::Thread::appSwitchToFiber(H1FiberHandleType* InFiberObject)
+{
+	SwitchToFiber(InFiberObject);
+}
+
+H1FiberHandleType* SGD::Thread::appGetCurrFiber()
+{
+	return (H1FiberHandleType*)GetCurrentFiber();
+}
+
+byte* SGD::Thread::appGetFiberData()
+{
+	return (byte*)GetFiberData();
+}

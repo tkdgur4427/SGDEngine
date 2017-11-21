@@ -15,20 +15,45 @@ namespace Thread
 	class H1WorkerThread_Impl
 	{
 	public:		
-		virtual uint32 Run(void* Data) = 0;
+		virtual uint32 Run(H1WorkerThread_Context* InContext) = 0;
 
 	protected:
 		virtual bool Initialize(H1WorkerThread_Context* Context) = 0;
 	};
 
 	// for user thread type (fiber-based worker thread)
-	class H1WorkerThread_FiberImp : public H1WorkerThread_Impl
+	class H1WorkerThread_FiberImpl : public H1WorkerThread_Impl
 	{		
 	public:
-		virtual uint32 Run(void* Data);
+		virtual uint32 Run(H1WorkerThread_Context* InContext);
 
 	protected:
 		virtual bool Initialize(H1WorkerThread_Context* Context);
+	};
+
+	// user-thread logic
+	class H1FiberThread_ContextImpl
+	{
+	public:
+
+	};
+
+	// user-thread context
+	//	- it captures the running hardware thread context capture (registers, stack, ...)
+	class H1FiberThread_Context
+	{
+	public:
+
+	protected:
+		// constructor for fiber-thread context is prohibited to create (only managed by fiber factory)
+		H1FiberThread_Context(int32 InStackSize);
+		~H1FiberThread_Context();
+
+		// platform-dependent fiber object
+		H1FiberHandleType* FiberObject;
+
+		// owner; currently bounded to worker thread instance
+		class H1WorkerThread_Context* Owner;
 	};
 
 	// worker thread context definition
@@ -36,6 +61,11 @@ namespace Thread
 	class H1WorkerThread_Context
 	{
 	public:
+
+	protected:
+		H1WorkerThread_Context();
+		~H1WorkerThread_Context();
+
 		// thread handle
 		H1ThreadHandleType ThreadHandle;
 		// thread id
@@ -46,16 +76,16 @@ namespace Thread
 		// memory stack 
 		SGD::Memory::H1MemStack MemStack;
 
-		// buddy allocator (thread-local)
-		
+		// fiber (user-thread context)
+		H1FiberThread_Context* FiberContext;
 	};	
 
-	// worker thread tuple
-	//	- worker thread tuple is not for having member variables, it is only allowed to temporary usage (like scoped life time)
-	class H1WorkerThreadTuple
+	// worker thread
+	//	- worker thread is not for having member variables, it is only allowed to temporary usage (like scoped life time)
+	class H1WorkerThread
 	{
 	public:
-		H1WorkerThreadTuple()
+		H1WorkerThread()
 			: Implementation(nullptr), Context(nullptr)
 		{}
 
